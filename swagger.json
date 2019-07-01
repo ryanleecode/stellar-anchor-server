@@ -1,0 +1,42 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "FI Anchor Emulator for the Stellar Network",
+    "title": "Stellar FI Anchor Emulator API.",
+    "contact": {
+      "name": "Ryan Lee",
+      "url": "http://drdgvhbh.io",
+      "email": "ryanleecode@gmail.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    },
+    "version": "0.0.2"
+  },
+  "host": "localhost",
+  "basePath": "/v1",
+  "paths": {},
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+STATUS="$(echo $(git status -s swagger.json) | head -c 1)"
+
+echo "pre-commit started"
+if [ $STATUS = "A" ] || [ $STATUS = "M" ]
+then
+  make generate-docs
+  git add swagger.json
+fi
+echo "pre-commit finished"
