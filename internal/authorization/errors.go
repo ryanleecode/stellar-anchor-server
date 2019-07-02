@@ -27,3 +27,17 @@ func NewTransactionIsMissingTimeBounds(
 ) *TransactionIsMissingTimeBounds {
 	return &TransactionIsMissingTimeBounds{message}
 }
+
+type TransactionChallengeExpired struct {
+	message string
+}
+
+func (e *TransactionChallengeExpired) Error() string {
+	return e.message
+}
+
+func NewTransactionChallengeExpired(
+	message string,
+) *TransactionChallengeExpired {
+	return &TransactionChallengeExpired{message}
+}

@@ -134,7 +134,9 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 			txe.Tx.TimeBounds)
 		if err != nil {
 			switch err.(type) {
-			case *authorization.TransactionSourceAccountDoesntMatchAnchorPublicKey:
+			case *authorization.TransactionSourceAccountDoesntMatchAnchorPublicKey,
+				*authorization.TransactionIsMissingTimeBounds,
+				*authorization.TransactionChallengeExpired:
 				w.WriteHeader(http.StatusBadRequest)
 				errorPayload := Payload{
 					Error: map[string]interface{}{

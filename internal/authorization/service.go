@@ -8,6 +8,7 @@ import (
 	"github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/go/xdr"
+	"time"
 )
 
 type StellarClient interface {
@@ -68,6 +69,10 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 	}
 	if timebounds == nil {
 		return NewTransactionIsMissingTimeBounds("transaction is missing timebounds")
+	}
+	now := xdr.TimePoint(time.Now().UTC().Unix())
+	if now > timebounds.MaxTime || now < timebounds.MinTime {
+		return NewTransactionChallengeExpired("transaction challenge has expired")
 	}
 	return nil
 }

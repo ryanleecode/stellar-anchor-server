@@ -3,10 +3,12 @@ package authorization
 import (
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/xdr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"stellar-fi-anchor/mock"
 	"testing"
+	"time"
 )
 
 type ServiceSuite struct {
@@ -54,6 +56,44 @@ func (s *ServiceSuite) TestValidationFailsWhenTimeboundsIsNil() {
 	assert.Error(s.T(), err)
 	origErr := errors.Cause(err)
 	assert.IsType(s.T(), &TransactionIsMissingTimeBounds{}, origErr)
+}
+
+func (s *ServiceSuite) TestValidationFailsWhenNowIsAfterTimeboundsMaxTime() {
+	authService := NewService(
+		s.stellarClientMock,
+		s.buildChallengeTransactionMock.BuildChallengeTransaction,
+		s.anchorKeyPair)
+
+	now := xdr.TimePoint(time.Now().UTC().Unix())
+	timeBounds := xdr.TimeBounds{
+		MinTime: now - 3,
+		MaxTime: now - 1,
+	}
+	err := authService.ValidateClientSignedChallengeTransaction(
+		s.anchorKeyPair.Address(),
+		&timeBounds)
+	assert.Error(s.T(), err)
+	origErr := errors.Cause(err)
+	assert.IsType(s.T(), &TransactionChallengeExpired{}, origErr)
+}
+
+func (s *ServiceSuite) TestValidationFailsWhenNowIsBeforeTimeboundsMinTime() {
+	authService := NewService(
+		s.stellarClientMock,
+		s.buildChallengeTransactionMock.BuildChallengeTransaction,
+		s.anchorKeyPair)
+
+	now := xdr.TimePoint(time.Now().UTC().Unix())
+	timeBounds := xdr.TimeBounds{
+		MinTime: now + 1,
+		MaxTime: now + 3,
+	}
+	err := authService.ValidateClientSignedChallengeTransaction(
+		s.anchorKeyPair.Address(),
+		&timeBounds)
+	assert.Error(s.T(), err)
+	origErr := errors.Cause(err)
+	assert.IsType(s.T(), &TransactionChallengeExpired{}, origErr)
 }
 
 func TestServiceSuite(t *testing.T) {
