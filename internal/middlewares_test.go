@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"stellar-fi-anchor/internal"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -22,7 +23,7 @@ func TestContentTypeMiddleware(t *testing.T) {
 
 	assert := assert.New(t)
 
-	handler := ContentType(http.HandlerFunc(mockHandler))
+	handler := internal.ContentType(http.HandlerFunc(mockHandler))
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
@@ -40,7 +41,7 @@ func TestRequestIDContextMiddleware(t *testing.T) {
 
 	assert := assert.New(t)
 
-	handler := IDContext(http.HandlerFunc(mockHandler))
+	handler := internal.IDContext(http.HandlerFunc(mockHandler))
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
@@ -65,7 +66,7 @@ func TestRequestMethodContextMiddleware(t *testing.T) {
 	const apiVersion = "v1"
 	const route = "testing"
 
-	handler := MethodContext(
+	handler := internal.MethodContext(
 		http.HandlerFunc(mockHandler))
 	router := mux.NewRouter().PathPrefix(
 		fmt.Sprintf("/%s", apiVersion)).Subrouter()
@@ -96,7 +97,7 @@ func TestResponseWriterMiddleware(t *testing.T) {
 
 	assert := assert.New(t)
 
-	handler := NewResponseWriter(
+	handler := internal.NewResponseWriter(
 		writerFactory)(http.HandlerFunc(mockHandler))
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
@@ -112,4 +113,3 @@ func TestResponseWriterMiddleware(t *testing.T) {
 
 	assert.EqualValues(testMessage, message)
 }
-

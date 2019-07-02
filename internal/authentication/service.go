@@ -1,4 +1,4 @@
-package authorization
+package authentication
 
 import (
 	"fmt"
@@ -62,17 +62,37 @@ func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (stri
 func (s *Service) ValidateClientSignedChallengeTransaction(
 	anchorPublicKey string,
 	timebounds *xdr.TimeBounds,
-) error {
+	operations []xdr.Operation,
+) []error {
+	validationErrs := make([]error, 0)
 	if anchorPublicKey != s.keypair.Address() {
-		return NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
-			fmt.Sprintf("the transaction's address does not match the anchor's"))
+		validationErrs = append(validationErrs, NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
+			fmt.Sprintf("the transaction's address does not match the anchor's")))
 	}
 	if timebounds == nil {
-		return NewTransactionIsMissingTimeBounds("transaction is missing timebounds")
+		validationErrs = append(
+			validationErrs, NewTransactionIsMissingTimeBounds("transaction is missing timebounds"))
+	} else {
+		now := xdr.TimePoint(time.Now().UTC().Unix())
+		if now > timebounds.MaxTime || now < timebounds.MinTime {
+			validationErrs = append(validationErrs, NewTransactionChallengeExpired("transaction challenge has expired"))
+		}
 	}
-	now := xdr.TimePoint(time.Now().UTC().Unix())
-	if now > timebounds.MaxTime || now < timebounds.MinTime {
-		return NewTransactionChallengeExpired("transaction challenge has expired")
+
+	if len(operations) != 1 {
+		validationErrs = append(validationErrs, NewTransactionChallengeDoesNotHaveOnlyOneOperation(
+			fmt.Sprintf("transaction can only have one operation but found %d", len(operations))))
+	} else {
+		operation := operations[0]
+		if operation.Body.Type != xdr.OperationTypeManageData {
+			validationErrs = append(validationErrs, NewTransactionChallengeIsNotAManageDataOperation(
+				"expected transaction to have a manage data operation type"))
+		}
+		if operation.SourceAccount == nil {
+			validationErrs = append(validationErrs, NewTransactionOperationSourceAccountIsEmpty(
+				"transaction operation does not have a source account id"))
+		}
 	}
-	return nil
+
+	return validationErrs
 }

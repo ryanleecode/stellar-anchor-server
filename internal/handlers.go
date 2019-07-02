@@ -7,7 +7,7 @@ import (
 	"github.com/stellar/go/xdr"
 	"github.com/thedevsaddam/govalidator"
 	"net/http"
-	"stellar-fi-anchor/internal/authorization"
+	"stellar-fi-anchor/internal/authentication"
 	"stellar-fi-anchor/internal/stellar"
 	"strings"
 )
@@ -19,7 +19,7 @@ type GetAuthResponse struct {
 type AuthorizationService interface {
 	BuildSignEncodeChallengeTransactionForAccount(id string) (string, error)
 	ValidateClientSignedChallengeTransaction(
-		anchorPublicKey string, timebounds *xdr.TimeBounds) error
+		anchorPublicKey string, timebounds *xdr.TimeBounds, operations []xdr.Operation) error
 }
 
 func NewGetAuthHandler(authService AuthorizationService) http.HandlerFunc {
@@ -129,14 +129,19 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 			return
 		}
 
+		tx := txe.Tx
 		err = authService.ValidateClientSignedChallengeTransaction(
-			txe.Tx.SourceAccount.Address(),
-			txe.Tx.TimeBounds)
+			tx.SourceAccount.Address(),
+			tx.TimeBounds,
+			tx.Operations)
 		if err != nil {
 			switch err.(type) {
-			case *authorization.TransactionSourceAccountDoesntMatchAnchorPublicKey,
-				*authorization.TransactionIsMissingTimeBounds,
-				*authorization.TransactionChallengeExpired:
+			case *authentication.TransactionSourceAccountDoesntMatchAnchorPublicKey,
+				*authentication.TransactionIsMissingTimeBounds,
+				*authentication.TransactionChallengeExpired,
+				*authentication.TransactionChallengeIsNotAManageDataOperation,
+				*authentication.TransactionChallengeDoesNotHaveOnlyOneOperation,
+				*authentication.TransactionOperationSourceAccountIsEmpty:
 				w.WriteHeader(http.StatusBadRequest)
 				errorPayload := Payload{
 					Error: map[string]interface{}{

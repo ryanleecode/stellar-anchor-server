@@ -4,7 +4,7 @@ import (
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"net/http"
-	"stellar-fi-anchor/internal/authorization"
+	"stellar-fi-anchor/internal/authentication"
 	"stellar-fi-anchor/internal/stellar"
 
 	"github.com/gorilla/handlers"
@@ -38,7 +38,7 @@ func NewRootHandler() http.Handler {
 
 	client := horizonclient.DefaultTestNetClient
 	clientWrpr := stellar.NewClient(client)
-	authService := authorization.NewService(clientWrpr, stellar.BuildChallengeTransaction, fiKeyPair)
+	authService := authentication.NewService(clientWrpr, stellar.BuildChallengeTransaction, fiKeyPair)
 
 	router := mux.NewRouter()
 	router.Use(ContentType)
