@@ -2,8 +2,9 @@ package internal
 
 // Payload is the payload for every response
 type Payload struct {
-	Data   []interface{}          `json:"data,omitempty"`
-	Errors map[string]interface{} `json:"errors,omitempty"`
+	Transaction interface{}            `json:"transaction,omitempty"`
+	Token       interface{}            `json:"token,omitempty"`
+	Error       map[string]interface{} `json:"error,omitempty"`
 }
 
 // Properties are the predefined set of properties for each response
