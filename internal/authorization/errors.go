@@ -13,3 +13,17 @@ func NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
 ) *TransactionSourceAccountDoesntMatchAnchorPublicKey {
 	return &TransactionSourceAccountDoesntMatchAnchorPublicKey{message}
 }
+
+type TransactionIsMissingTimeBounds struct {
+	message string
+}
+
+func (e *TransactionIsMissingTimeBounds) Error() string {
+	return e.message
+}
+
+func NewTransactionIsMissingTimeBounds(
+	message string,
+) *TransactionIsMissingTimeBounds {
+	return &TransactionIsMissingTimeBounds{message}
+}
