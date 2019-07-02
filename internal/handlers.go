@@ -18,7 +18,8 @@ type GetAuthResponse struct {
 
 type AuthorizationService interface {
 	BuildSignEncodeChallengeTransactionForAccount(id string) (string, error)
-	ValidateClientSignedChallengeTransaction(anchorPublicKey string) error
+	ValidateClientSignedChallengeTransaction(
+		anchorPublicKey string, timebounds *xdr.TimeBounds) error
 }
 
 func NewGetAuthHandler(authService AuthorizationService) http.HandlerFunc {
@@ -129,7 +130,8 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 		}
 
 		err = authService.ValidateClientSignedChallengeTransaction(
-			txe.Tx.SourceAccount.Address())
+			txe.Tx.SourceAccount.Address(),
+			txe.Tx.TimeBounds)
 		if err != nil {
 			switch err.(type) {
 			case *authorization.TransactionSourceAccountDoesntMatchAnchorPublicKey:

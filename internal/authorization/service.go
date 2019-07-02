@@ -7,6 +7,7 @@ import (
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
+	"github.com/stellar/go/xdr"
 )
 
 type StellarClient interface {
@@ -57,10 +58,16 @@ func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (stri
 	return b64e, nil
 }
 
-func (s *Service) ValidateClientSignedChallengeTransaction(anchorPublicKey string) error {
+func (s *Service) ValidateClientSignedChallengeTransaction(
+	anchorPublicKey string,
+	timebounds *xdr.TimeBounds,
+) error {
 	if anchorPublicKey != s.keypair.Address() {
 		return NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
 			fmt.Sprintf("the transaction's address does not match the anchor's"))
+	}
+	if timebounds == nil {
+		return NewTransactionIsMissingTimeBounds("transaction is missing timebounds")
 	}
 	return nil
 }
