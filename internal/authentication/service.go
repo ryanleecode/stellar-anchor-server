@@ -44,6 +44,7 @@ func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (stri
 		return "", errors.Wrap(err, "cannot fetch server account details")
 	}
 	txn, err := s.build(serverAccount, clientAccount)
+
 	if err != nil {
 		return "", errors.Wrap(err, "cannot build challenge txn")
 	}
@@ -60,12 +61,14 @@ func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (stri
 }
 
 func (s *Service) ValidateClientSignedChallengeTransaction(
-	anchorPublicKey string,
-	timebounds *xdr.TimeBounds,
-	operations []xdr.Operation,
+	txe *xdr.TransactionEnvelope,
 ) []error {
+	tx := txe.Tx
+	txAnchorPubKey := tx.SourceAccount.Address()
+	timebounds := tx.TimeBounds
+	operations := tx.Operations
 	validationErrs := make([]error, 0)
-	if anchorPublicKey != s.keypair.Address() {
+	if txAnchorPubKey != s.keypair.Address() {
 		validationErrs = append(validationErrs, NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
 			fmt.Sprintf("the transaction's address does not match the anchor's")))
 	}
@@ -79,7 +82,9 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 		}
 	}
 
-	if len(operations) != 1 {
+	if operations == nil {
+		validationErrs = append(validationErrs, NewTransactionOperationsIsNil("transaction is missing manage data operation"))
+	} else if len(operations) != 1 {
 		validationErrs = append(validationErrs, NewTransactionChallengeDoesNotHaveOnlyOneOperation(
 			fmt.Sprintf("transaction can only have one operation but found %d", len(operations))))
 	} else {
@@ -92,6 +97,7 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 			validationErrs = append(validationErrs, NewTransactionOperationSourceAccountIsEmpty(
 				"transaction operation does not have a source account id"))
 		}
+
 	}
 
 	return validationErrs

@@ -83,3 +83,17 @@ func NewTransactionOperationSourceAccountIsEmpty(
 ) *TransactionOperationSourceAccountIsEmpty {
 	return &TransactionOperationSourceAccountIsEmpty{message}
 }
+
+type TransactionOperationsIsNil struct {
+	message string
+}
+
+func (e *TransactionOperationsIsNil) Error() string {
+	return e.message
+}
+
+func NewTransactionOperationsIsNil(
+	message string,
+) *TransactionOperationsIsNil {
+	return &TransactionOperationsIsNil{message}
+}

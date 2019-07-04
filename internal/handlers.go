@@ -19,7 +19,7 @@ type GetAuthResponse struct {
 type AuthorizationService interface {
 	BuildSignEncodeChallengeTransactionForAccount(id string) (string, error)
 	ValidateClientSignedChallengeTransaction(
-		anchorPublicKey string, timebounds *xdr.TimeBounds, operations []xdr.Operation) error
+		txe *xdr.TransactionEnvelope) []error
 }
 
 func NewGetAuthHandler(authService AuthorizationService) http.HandlerFunc {
@@ -89,10 +89,10 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 		body := transactionAuth{}
 		opts := govalidator.Options{
 			Request:         r,
-			Data:            &body,    // request object
-			Rules:           rules,    // rules map
-			Messages:        messages, // custom message map (Optional)
-			RequiredDefault: true,     // all the field to be pass the rules
+			Data:            &body,
+			Rules:           rules,
+			Messages:        messages,
+			RequiredDefault: true,
 		}
 		v := govalidator.New(opts)
 		e := v.ValidateJSON()
@@ -129,31 +129,32 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 			return
 		}
 
-		tx := txe.Tx
-		err = authService.ValidateClientSignedChallengeTransaction(
-			tx.SourceAccount.Address(),
-			tx.TimeBounds,
-			tx.Operations)
-		if err != nil {
-			switch err.(type) {
+		validationErrs := authService.ValidateClientSignedChallengeTransaction(&txe)
+		for _, e := range validationErrs {
+			switch e.(type) {
 			case *authentication.TransactionSourceAccountDoesntMatchAnchorPublicKey,
 				*authentication.TransactionIsMissingTimeBounds,
 				*authentication.TransactionChallengeExpired,
 				*authentication.TransactionChallengeIsNotAManageDataOperation,
 				*authentication.TransactionChallengeDoesNotHaveOnlyOneOperation,
-				*authentication.TransactionOperationSourceAccountIsEmpty:
-				w.WriteHeader(http.StatusBadRequest)
-				errorPayload := Payload{
-					Error: map[string]interface{}{
-						"message": err.Error(),
-					},
-				}
-				err := json.NewEncoder(w).Encode(&errorPayload)
-				if err != nil {
-					panic(err)
-				}
-				return
+				*authentication.TransactionOperationSourceAccountIsEmpty,
+				*authentication.TransactionOperationsIsNil:
+
+				continue
 			default:
+				panic(err)
+			}
+		}
+
+		if len(validationErrs) > 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			errorPayload := Payload{
+				Error: map[string]interface{}{
+					"errors": validationErrs,
+				},
+			}
+			err := json.NewEncoder(w).Encode(&errorPayload)
+			if err != nil {
 				panic(err)
 			}
 		}
