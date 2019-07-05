@@ -41,10 +41,16 @@ func NewRootHandler() http.Handler {
 	authService := authentication.NewService(clientWrpr, stellar.BuildChallengeTransaction, fiKeyPair)
 
 	router := mux.NewRouter()
-	router.Use(ContentType)
-	router.Use(IDContext)
-	router.Use(MethodContext)
+
+	router.HandleFunc("/stellar.toml", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		http.ServeFile(w, r, "stellar.toml")
+	})
+
 	apiVersionRouter := router.PathPrefix("/v1").Subrouter()
+	apiVersionRouter.Use(ContentType)
+	apiVersionRouter.Use(IDContext)
+	apiVersionRouter.Use(MethodContext)
 	apiVersionRouter.Use(NewResponseWriter(newResponseWriter))
 
 	apiVersionRouter.
