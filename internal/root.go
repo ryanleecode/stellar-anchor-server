@@ -46,17 +46,17 @@ func NewRootHandler() http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.ServeFile(w, r, "stellar.toml")
 	})
+ 
+	apiRouter := router.PathPrefix("/api/v1").Subrouter()
+	apiRouter.Use(ContentType)
+	apiRouter.Use(IDContext)
+	apiRouter.Use(MethodContext)
+	apiRouter.Use(NewResponseWriter(newResponseWriter))
 
-	apiVersionRouter := router.PathPrefix("/v1").Subrouter()
-	apiVersionRouter.Use(ContentType)
-	apiVersionRouter.Use(IDContext)
-	apiVersionRouter.Use(MethodContext)
-	apiVersionRouter.Use(NewResponseWriter(newResponseWriter))
-
-	apiVersionRouter.
+	apiRouter.
 		HandleFunc("/authorizations", NewGetAuthHandler(authService)).
 		Methods("GET")
-	apiVersionRouter.
+	apiRouter.
 		HandleFunc("/authorizations", NewPostAuthHandler(authService)).
 		Methods("POST")
 
