@@ -138,7 +138,9 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 				*authentication.TransactionChallengeIsNotAManageDataOperation,
 				*authentication.TransactionChallengeDoesNotHaveOnlyOneOperation,
 				*authentication.TransactionOperationSourceAccountIsEmpty,
-				*authentication.TransactionOperationsIsNil:
+				*authentication.TransactionOperationsIsNil,
+				*authentication.TransactionIsNotSignedByAnchor,
+				*authentication.TransactionIsNotSignedByClient:
 
 				continue
 			default:
@@ -157,6 +159,7 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 			if err != nil {
 				panic(err)
 			}
+			return
 		}
 
 		dataPayload := tokenPayload{Token: ""}

@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	"github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/go/xdr"
@@ -48,6 +49,7 @@ func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (stri
 	if err != nil {
 		return "", errors.Wrap(err, "cannot build challenge txn")
 	}
+
 	err = txn.Sign(s.keypair)
 	if err != nil {
 		return "", errors.Wrap(err, "cannot sign challenge txn")
@@ -82,6 +84,7 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 		}
 	}
 
+	clientPublicKey := ""
 	if operations == nil {
 		validationErrs = append(validationErrs, NewTransactionOperationsIsNil("transaction is missing manage data operation"))
 	} else if len(operations) != 1 {
@@ -96,9 +99,55 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 		if operation.SourceAccount == nil {
 			validationErrs = append(validationErrs, NewTransactionOperationSourceAccountIsEmpty(
 				"transaction operation does not have a source account id"))
+		} else {
+			clientPublicKey = operation.SourceAccount.Address()
+		}
+	}
+
+	hash, err := network.HashTransaction(&tx, network.TestNetworkPassphrase)
+	if err != nil {
+		validationErrs = append(validationErrs, errors.Wrap(err, "cannot hash transaction"))
+		return validationErrs
+	}
+
+	isSignedByAnchor := validationTransactionIsSignedBy(s.keypair, hash[:], txe.Signatures)
+	if !isSignedByAnchor {
+		validationErrs = append(validationErrs, NewTransactionIsNotSignedByAnchor(
+			"transaction is not signed by the anchor"))
+	}
+
+	clientKeyPair, err := keypair.Parse(clientPublicKey)
+	if err != nil {
+		validationErrs = append(validationErrs, NewCannotParseClientPublicKey(
+			fmt.Sprintf("cannot parse client public key %s", clientPublicKey)))
+	}
+	if clientKeyPair != nil {
+		isSignedByClient := validationTransactionIsSignedBy(clientKeyPair, hash[:], txe.Signatures)
+		if !isSignedByClient {
+			validationErrs = append(validationErrs, NewTransactionIsNotSignedByClient(
+				"transaction is not signed by the client"))
 		}
 
 	}
 
 	return validationErrs
+}
+
+func validationTransactionIsSignedBy(
+	kp keypair.KP,
+	transaction []byte,
+	signatures []xdr.DecoratedSignature,
+) bool {
+	if transaction == nil || signatures == nil || len(signatures) == 0 {
+		return false
+	}
+
+	for _, decorSig := range signatures {
+		err := kp.Verify(transaction, decorSig.Signature)
+		if err == nil {
+			return true
+		}
+	}
+
+	return false
 }

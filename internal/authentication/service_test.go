@@ -217,7 +217,75 @@ func (s *ServiceSuite) TestValidationFailsIfOperationSourceAccountIsNil() {
 }
 
 func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByAnchor() {
+	tx := s.generateChallengeTransaction(
+		s.anchorKeyPair.Address(), nil, nil)
+	txBytes, err := tx.MarshalBinary()
+	assert.NoError(s.T(), err)
+	randomKeyPair, err := keypair.Random()
+	assert.NoError(s.T(), err)
+	decorSig, err := randomKeyPair.SignDecorated(txBytes)
+	assert.NoError(s.T(), err)
+	txEnv := xdr.TransactionEnvelope{
+		Tx:         *tx,
+		Signatures: []xdr.DecoratedSignature{decorSig},
+	}
 
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
+		origErr := errors.Cause(x)
+		switch origErr.(type) {
+		case *TransactionIsNotSignedByAnchor:
+			return true
+		default:
+			return false
+		}
+	})
+	assert.True(s.T(),
+		len(filteredErrs.([]error)) == 1)
+}
+
+func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByClient() {
+	clientKeyPair, err := keypair.Random()
+	assert.NoError(s.T(), err)
+
+	var clientAccountID xdr.AccountId
+	err = clientAccountID.SetAddress(clientKeyPair.Address())
+	assert.NoError(s.T(), err)
+
+	ops := []xdr.Operation{
+		{
+			Body: xdr.OperationBody{
+				Type:         xdr.OperationTypeManageData,
+				ManageDataOp: &xdr.ManageDataOp{},
+			},
+			SourceAccount: &clientAccountID,
+		}}
+
+	tx := s.generateChallengeTransaction(
+		s.anchorKeyPair.Address(), nil, ops)
+	txBytes, err := tx.MarshalBinary()
+	assert.NoError(s.T(), err)
+	randomKeyPair, err := keypair.Random()
+	assert.NoError(s.T(), err)
+	decorSig, err := randomKeyPair.SignDecorated(txBytes)
+	assert.NoError(s.T(), err)
+	txEnv := xdr.TransactionEnvelope{
+		Tx:         *tx,
+		Signatures: []xdr.DecoratedSignature{decorSig},
+	}
+
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
+		origErr := errors.Cause(x)
+		switch origErr.(type) {
+		case *TransactionIsNotSignedByClient:
+			return true
+		default:
+			return false
+		}
+	})
+	assert.True(s.T(),
+		len(filteredErrs.([]error)) == 1)
 }
 
 func TestServiceSuite(t *testing.T) {

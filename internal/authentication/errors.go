@@ -1,11 +1,11 @@
 package authentication
 
 type TransactionSourceAccountDoesntMatchAnchorPublicKey struct {
-	message string
+	Message string `json:"message"`
 }
 
 func (e *TransactionSourceAccountDoesntMatchAnchorPublicKey) Error() string {
-	return e.message
+	return e.Message
 }
 
 func NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
@@ -15,11 +15,11 @@ func NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
 }
 
 type TransactionIsMissingTimeBounds struct {
-	message string
+	Message string `json:"message"`
 }
 
 func (e *TransactionIsMissingTimeBounds) Error() string {
-	return e.message
+	return e.Message
 }
 
 func NewTransactionIsMissingTimeBounds(
@@ -29,11 +29,11 @@ func NewTransactionIsMissingTimeBounds(
 }
 
 type TransactionChallengeExpired struct {
-	message string
+	Message string `json:"message"`
 }
 
 func (e *TransactionChallengeExpired) Error() string {
-	return e.message
+	return e.Message
 }
 
 func NewTransactionChallengeExpired(
@@ -43,7 +43,11 @@ func NewTransactionChallengeExpired(
 }
 
 type TransactionChallengeDoesNotHaveOnlyOneOperation struct {
-	message string
+	Message string `json:"message"`
+}
+
+func (e *TransactionChallengeDoesNotHaveOnlyOneOperation) Error() string {
+	return e.Message
 }
 
 func NewTransactionChallengeDoesNotHaveOnlyOneOperation(
@@ -52,16 +56,12 @@ func NewTransactionChallengeDoesNotHaveOnlyOneOperation(
 	return &TransactionChallengeDoesNotHaveOnlyOneOperation{message}
 }
 
-func (e *TransactionChallengeDoesNotHaveOnlyOneOperation) Error() string {
-	return e.message
-}
-
 type TransactionChallengeIsNotAManageDataOperation struct {
-	message string
+	Message string `json:"message"`
 }
 
 func (e *TransactionChallengeIsNotAManageDataOperation) Error() string {
-	return e.message
+	return e.Message
 }
 
 func NewTransactionChallengeIsNotAManageDataOperation(
@@ -71,11 +71,11 @@ func NewTransactionChallengeIsNotAManageDataOperation(
 }
 
 type TransactionOperationSourceAccountIsEmpty struct {
-	message string
+	Message string `json:"message"`
 }
 
 func (e *TransactionOperationSourceAccountIsEmpty) Error() string {
-	return e.message
+	return e.Message
 }
 
 func NewTransactionOperationSourceAccountIsEmpty(
@@ -85,15 +85,57 @@ func NewTransactionOperationSourceAccountIsEmpty(
 }
 
 type TransactionOperationsIsNil struct {
-	message string
+	Message string `json:"message"`
 }
 
 func (e *TransactionOperationsIsNil) Error() string {
-	return e.message
+	return e.Message
 }
 
 func NewTransactionOperationsIsNil(
 	message string,
 ) *TransactionOperationsIsNil {
 	return &TransactionOperationsIsNil{message}
+}
+
+type CannotParseClientPublicKey struct {
+	Message string `json:"message"`
+}
+
+func (e *CannotParseClientPublicKey) Error() string {
+	return e.Message
+}
+
+func NewCannotParseClientPublicKey(
+	message string,
+) *CannotParseClientPublicKey {
+	return &CannotParseClientPublicKey{message}
+}
+
+type TransactionIsNotSignedByAnchor struct {
+	Message string `json:"message"`
+}
+
+func (e *TransactionIsNotSignedByAnchor) Error() string {
+	return e.Message
+}
+
+func NewTransactionIsNotSignedByAnchor(
+	message string,
+) *TransactionIsNotSignedByAnchor {
+	return &TransactionIsNotSignedByAnchor{message}
+}
+
+type TransactionIsNotSignedByClient struct {
+	Message string `json:"message"`
+}
+
+func (e *TransactionIsNotSignedByClient) Error() string {
+	return e.Message
+}
+
+func NewTransactionIsNotSignedByClient(
+	message string,
+) *TransactionIsNotSignedByClient {
+	return &TransactionIsNotSignedByClient{message}
 }
