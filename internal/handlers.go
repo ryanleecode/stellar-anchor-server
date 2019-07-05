@@ -7,7 +7,7 @@ import (
 	"github.com/stellar/go/xdr"
 	"github.com/thedevsaddam/govalidator"
 	"net/http"
-	"stellar-fi-anchor/internal/authorization"
+	"stellar-fi-anchor/internal/authentication"
 	"stellar-fi-anchor/internal/stellar"
 	"strings"
 )
@@ -18,7 +18,8 @@ type GetAuthResponse struct {
 
 type AuthorizationService interface {
 	BuildSignEncodeChallengeTransactionForAccount(id string) (string, error)
-	ValidateClientSignedChallengeTransaction(anchorPublicKey string) error
+	ValidateClientSignedChallengeTransaction(
+		txe *xdr.TransactionEnvelope) []error
 }
 
 func NewGetAuthHandler(authService AuthorizationService) http.HandlerFunc {
@@ -88,10 +89,10 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 		body := transactionAuth{}
 		opts := govalidator.Options{
 			Request:         r,
-			Data:            &body,    // request object
-			Rules:           rules,    // rules map
-			Messages:        messages, // custom message map (Optional)
-			RequiredDefault: true,     // all the field to be pass the rules
+			Data:            &body,
+			Rules:           rules,
+			Messages:        messages,
+			RequiredDefault: true,
 		}
 		v := govalidator.New(opts)
 		e := v.ValidateJSON()
@@ -128,25 +129,37 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 			return
 		}
 
-		err = authService.ValidateClientSignedChallengeTransaction(
-			txe.Tx.SourceAccount.Address())
-		if err != nil {
-			switch err.(type) {
-			case *authorization.TransactionSourceAccountDoesntMatchAnchorPublicKey:
-				w.WriteHeader(http.StatusBadRequest)
-				errorPayload := Payload{
-					Error: map[string]interface{}{
-						"message": err.Error(),
-					},
-				}
-				err := json.NewEncoder(w).Encode(&errorPayload)
-				if err != nil {
-					panic(err)
-				}
-				return
+		validationErrs := authService.ValidateClientSignedChallengeTransaction(&txe)
+		for _, e := range validationErrs {
+			switch e.(type) {
+			case *authentication.TransactionSourceAccountDoesntMatchAnchorPublicKey,
+				*authentication.TransactionIsMissingTimeBounds,
+				*authentication.TransactionChallengeExpired,
+				*authentication.TransactionChallengeIsNotAManageDataOperation,
+				*authentication.TransactionChallengeDoesNotHaveOnlyOneOperation,
+				*authentication.TransactionOperationSourceAccountIsEmpty,
+				*authentication.TransactionOperationsIsNil,
+				*authentication.TransactionIsNotSignedByAnchor,
+				*authentication.TransactionIsNotSignedByClient:
+
+				continue
 			default:
 				panic(err)
 			}
+		}
+
+		if len(validationErrs) > 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			errorPayload := Payload{
+				Error: map[string]interface{}{
+					"errors": validationErrs,
+				},
+			}
+			err := json.NewEncoder(w).Encode(&errorPayload)
+			if err != nil {
+				panic(err)
+			}
+			return
 		}
 
 		dataPayload := tokenPayload{Token: ""}
