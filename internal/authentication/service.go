@@ -113,7 +113,7 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 		return validationErrs
 	}
 
-	isSignedByAnchor := validationTransactionIsSignedBy(s.keypair, hash[:], txe.Signatures)
+	isSignedByAnchor := validateTransactionIsSignedBy(s.keypair, hash[:], txe.Signatures)
 	if !isSignedByAnchor {
 		validationErrs = append(validationErrs, NewTransactionIsNotSignedByAnchor(
 			"transaction is not signed by the anchor"))
@@ -125,7 +125,7 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 			fmt.Sprintf("cannot parse client public key %s", clientPublicKey)))
 	}
 	if clientKeyPair != nil {
-		isSignedByClient := validationTransactionIsSignedBy(clientKeyPair, hash[:], txe.Signatures)
+		isSignedByClient := validateTransactionIsSignedBy(clientKeyPair, hash[:], txe.Signatures)
 		if !isSignedByClient {
 			validationErrs = append(validationErrs, NewTransactionIsNotSignedByClient(
 				"transaction is not signed by the client"))
@@ -136,7 +136,7 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 	return validationErrs
 }
 
-func validationTransactionIsSignedBy(
+func validateTransactionIsSignedBy(
 	kp keypair.KP,
 	transaction []byte,
 	signatures []xdr.DecoratedSignature,
