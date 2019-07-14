@@ -61,6 +61,34 @@ func (s *ServiceSuite) generateChallengeTransaction(
 	return &tx
 }
 
+func (s *ServiceSuite) TestValidationIsSuccessful() {
+	clientKP, err := keypair.Random()
+	assert.NoError(s.T(), err)
+
+	now := time.Now().UTC().Unix()
+	timeBounds := txnbuild.NewTimebounds(now-1, now+1)
+
+	tx := s.generateChallengeTransaction(
+		clientKP.Address(),
+		&timeBounds,
+		[]txnbuild.Operation{
+			&txnbuild.ManageData{
+				SourceAccount: &txnbuild.SimpleAccount{
+					AccountID: clientKP.Address()},
+				Name:  "Stellar FI Anchor auth",
+				Value: []byte{},
+			},
+		})
+	err = tx.Build()
+	assert.NoError(s.T(), err)
+	err = tx.Sign(s.anchorKeyPair, clientKP)
+	assert.NoError(s.T(), err)
+
+	txe := tx.TxEnvelope()
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txe)
+	assert.Empty(s.T(), validationErrs)
+}
+
 func (s *ServiceSuite) TestValidationFailsWhenSourceAccountDoesntMatchPublicKey() {
 	clientKP, err := keypair.Random()
 	assert.NoError(s.T(), err)
