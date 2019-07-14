@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"stellar-fi-anchor/internal/deposits"
-	"stellar-fi-anchor/internal/response"
 )
 
 func NewRootHandler(

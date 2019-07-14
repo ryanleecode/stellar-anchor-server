@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/thedevsaddam/govalidator"
 	"net/http"
-	"stellar-fi-anchor/internal/response"
 )
 
 type GetDepositQueryParams struct {
@@ -36,9 +35,9 @@ func NewGetDepositHandler() http.HandlerFunc {
 		}
 		validationErrs := govalidator.New(opts).Validate()
 		if len(validationErrs) > 0 {
-			errorPayload := response.Payload{
-				Error: map[string]interface{}{
-					"message": "bad request",
+			errorPayload := map[string]interface{}{
+				"error": map[string]interface{}{
+					"message": "request validation error",
 					"errors":  validationErrs,
 				},
 			}
