@@ -30,12 +30,14 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
+	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
 	"net/http"
 	"os"
 	"stellar-fi-anchor/internal/authentication"
+	"stellar-fi-anchor/internal/models"
 	"stellar-fi-anchor/internal/random"
 	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 	"time"
@@ -54,11 +56,21 @@ func main() {
 		log.Fatalln("env variable PRIVATE_KEY not defined")
 	}
 	passphrase := network.TestNetworkPassphrase
-
 	fiKeyPair, err := keypair.Parse(privateKey)
 	if err != nil {
 		log.Fatalln("private key is not parsable")
 	}
+
+	db, err := gorm.Open(
+		"postgres", "host=localhost port=6666 user=postgres dbname=postgres sslmode=disable")
+	if err != nil {
+		log.Fatalln(err, "failed to open database")
+	}
+	defer func() {
+		_ = db.Close()
+	}()
+
+	db.AutoMigrate(models.Asset{})
 
 	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(
 		passphrase,
