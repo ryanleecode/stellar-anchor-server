@@ -3,19 +3,13 @@ package authentication
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
-	"github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/go/xdr"
 	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 	"time"
 )
-
-type StellarClient interface {
-	AccountDetail(request horizonclient.AccountRequest) (*horizon.Account, error)
-}
 
 type ChallengeTransactionFactory interface {
 	Build(serverAccount stellarsdk.Account, clientAccount stellarsdk.Account) (*txnbuild.Transaction, error)
