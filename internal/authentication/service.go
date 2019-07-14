@@ -1,7 +1,9 @@
 package authentication
 
 import (
+	"encoding/hex"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
@@ -147,4 +149,25 @@ func validateTransactionIsSignedBy(
 	}
 
 	return false
+}
+
+func (s *Service) Authenticate(txe *xdr.TransactionEnvelope) (string, error) {
+	now := time.Now()
+	txeHash, err := network.HashTransaction(&txe.Tx, s.networkPassphrase)
+	if err != nil {
+		return "", errors.Wrap(err, "transaction cannot be hashed")
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss": "", // TODO: Assign iss from pulling stellar.toml
+		"sub": txe.Tx.Operations[0].SourceAccount.Address(),
+		"iat": now.Unix(),
+		"exp": now.Add(24 * time.Hour).Unix(),
+		"jti": hex.EncodeToString(txeHash[:]),
+	})
+	signedJwt, err := token.SignedString([]byte(s.keypair.Seed()))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to sign jwt token")
+	}
+
+	return signedJwt, nil
 }
