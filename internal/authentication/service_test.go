@@ -3,6 +3,7 @@ package authentication
 import (
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	"github.com/stellar/go/xdr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -18,6 +19,7 @@ type ServiceSuite struct {
 	buildChallengeTransactionMock *mock.BuildChallengeTransactionMock
 	anchorKeyPair                 *keypair.Full
 	authService                   *Service
+	passphrase                    string
 }
 
 func (s *ServiceSuite) SetupTest() {
@@ -28,11 +30,13 @@ func (s *ServiceSuite) SetupTest() {
 	assert.NoError(s.T(), err)
 
 	s.anchorKeyPair = anchorKeyPair
+	s.passphrase = network.TestNetworkPassphrase
 
 	s.authService = NewService(
 		s.stellarClientMock,
 		s.buildChallengeTransactionMock,
-		s.anchorKeyPair)
+		s.anchorKeyPair,
+		s.passphrase)
 }
 
 func (s *ServiceSuite) generateChallengeTransaction(
