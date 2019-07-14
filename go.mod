@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/gavv/monotime v0.0.0-20190418164738-30dba4353424 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
@@ -27,7 +28,7 @@ require (
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
-	github.com/stellar/go v0.0.0-20190701181558-94cd2de8fa96
+	github.com/stellar/go v0.0.0-20190711183142-d64eef13c9c0
 	github.com/stellar/go-xdr v0.0.0-20180917104419-0bc96f33a18e // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.3.0

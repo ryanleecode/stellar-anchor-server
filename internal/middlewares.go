@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var versionPrefixRegex = regexp.MustCompile("/v[0-9]+/")
+var apiCallPrefix = regexp.MustCompile("/api/v[0-9]+/")
 
 // ContentType injects application/json as the content type
 func ContentType(next http.Handler) http.Handler {
@@ -30,7 +30,7 @@ func MethodContext(next http.Handler) http.Handler {
 			"method",
 			fmt.Sprintf("%s.%s",
 				strings.Replace(
-					versionPrefixRegex.ReplaceAllString(
+					apiCallPrefix.ReplaceAllString(
 						request.RequestURI, ""), "/", ".", -1),
 				strings.ToLower(request.Method),
 			))

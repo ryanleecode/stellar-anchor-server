@@ -1,38 +1,36 @@
-package stellar
+package stellarsdk
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/network"
-	"github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"time"
 )
 
-type Client struct {
-	client *horizonclient.Client
+type ChallengeTransactionFactory struct {
+	nounceGenerator func() (string, error)
 }
 
-func NewClient(c *horizonclient.Client) *Client {
-	return &Client{client: c}
+func NewChallengeTransactionFactory(nounceGenerator func() (string, error)) *ChallengeTransactionFactory {
+	return &ChallengeTransactionFactory{
+		nounceGenerator,
+	}
 }
 
-func BuildChallengeTransaction(
-	serverAccount *horizon.Account, clientAccount *horizon.Account,
-) (*txnbuild.Transaction, error) {
-	currentSequenceNumber := serverAccount.Sequence
-	defer func() {
-		serverAccount.Sequence = currentSequenceNumber
-	}()
-	serverAccount.Sequence = "0"
-	randomNounce, err := GenerateRandomString(48)
+type Account txnbuild.Account
+
+func (f *ChallengeTransactionFactory) Build(serverAccount Account, clientAccount Account) (*txnbuild.Transaction, error) {
+	randomNounce, err := f.nounceGenerator()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate random nounce for challenge")
 	}
 
 	currentTime := time.Now().UTC().Unix()
 	tx := txnbuild.Transaction{
-		SourceAccount: serverAccount,
+		SourceAccount: &txnbuild.SimpleAccount{
+			AccountID: serverAccount.GetAccountID(),
+			Sequence:  -1,
+		},
 		Timebounds: txnbuild.NewTimebounds(
 			currentTime,
 			currentTime+(int64(time.Minute.Seconds())*5),

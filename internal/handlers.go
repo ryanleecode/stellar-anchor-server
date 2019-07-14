@@ -2,14 +2,18 @@ package internal
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
+	"github.com/stellar/go/network"
 	"github.com/stellar/go/xdr"
 	"github.com/thedevsaddam/govalidator"
 	"net/http"
 	"stellar-fi-anchor/internal/authentication"
-	"stellar-fi-anchor/internal/stellar"
+	"stellar-fi-anchor/internal/stellar-sdk"
 	"strings"
+	"time"
 )
 
 type GetAuthResponse struct {
@@ -43,7 +47,7 @@ func NewGetAuthHandler(authService AuthorizationService) http.HandlerFunc {
 		if err != nil {
 			origErr := errors.Cause(err)
 			switch origErr.(type) {
-			case *stellar.InvalidAccountID:
+			case *stellarsdk.InvalidAccountID:
 				errorPayload := Payload{
 					Error: map[string]interface{}{
 						"message": "account id is invalid",
@@ -162,7 +166,25 @@ func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
 			return
 		}
 
-		dataPayload := tokenPayload{Token: ""}
+		now := time.Now()
+		txeHash, err := network.HashTransaction(&txe.Tx, network.TestNetworkPassphrase)
+		if err != nil {
+			panic(err)
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"iss": "",
+			"sub": txe.Tx.Operations[0].SourceAccount.Address(),
+			"iat": now.Unix(),
+			"exp": now.Add(24 * time.Hour).Unix(),
+			"jti": hex.EncodeToString(txeHash[:]),
+		})
+
+		encodedToken, err := token.SignedString([]byte("SA4VF5RNXMFWS4JPLXDRP3D3SLSKMAZMCCXYC24LXMXUVYJLBN3F2ISY"))
+		if err != nil {
+			panic(err)
+		}
+
+		dataPayload := tokenPayload{Token: encodedToken}
 		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(&dataPayload)
 		if err != nil {

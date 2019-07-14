@@ -9,6 +9,7 @@ import (
 	"github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/go/xdr"
+	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 	"time"
 )
 
@@ -16,19 +17,21 @@ type StellarClient interface {
 	AccountDetail(request horizonclient.AccountRequest) (*horizon.Account, error)
 }
 
-type BuildChallengeTransaction func(serverAccount *horizon.Account, clientAccount *horizon.Account) (*txnbuild.Transaction, error)
-
-type Service struct {
-	stellarClient StellarClient
-	build         BuildChallengeTransaction
-	keypair       *keypair.Full
+type ChallengeTransactionFactory interface {
+	Build(serverAccount stellarsdk.Account, clientAccount stellarsdk.Account) (*txnbuild.Transaction, error)
 }
 
-func NewService(stellarClient StellarClient, build BuildChallengeTransaction, keypair *keypair.Full) *Service {
+type Service struct {
+	stellarClient      StellarClient
+	challengeTxFactory ChallengeTransactionFactory
+	keypair            *keypair.Full
+}
+
+func NewService(stellarClient StellarClient, challengeTxFactory ChallengeTransactionFactory, keypair *keypair.Full) *Service {
 	return &Service{
-		stellarClient: stellarClient,
-		build:         build,
-		keypair:       keypair,
+		stellarClient:      stellarClient,
+		challengeTxFactory: challengeTxFactory,
+		keypair:            keypair,
 	}
 }
 
@@ -44,7 +47,7 @@ func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (stri
 	if err != nil {
 		return "", errors.Wrap(err, "cannot fetch server account details")
 	}
-	txn, err := s.build(serverAccount, clientAccount)
+	txn, err := s.challengeTxFactory.Build(serverAccount, clientAccount)
 
 	if err != nil {
 		return "", errors.Wrap(err, "cannot build challenge txn")

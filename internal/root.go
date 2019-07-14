@@ -1,11 +1,13 @@
 package internal
 
 import (
+	"crypto/rand"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"net/http"
 	"stellar-fi-anchor/internal/authentication"
-	"stellar-fi-anchor/internal/stellar"
+	"stellar-fi-anchor/internal/random"
+	"stellar-fi-anchor/internal/stellar-sdk"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -29,24 +31,25 @@ func newResponseWriter(
 }
 
 func NewRootHandler() http.Handler {
-	var seed [32]byte
-	copy(seed[:], []byte("SD5E2MXKN2MEOILRZ5TAXCNDC6ZSF2UZR7GDDMZCVRJQT3Q6BJCGYRTM"))
-	fiKeyPair, err := keypair.FromRawSeed(seed)
+	fiKeyPair, err := keypair.Parse("SA4VF5RNXMFWS4JPLXDRP3D3SLSKMAZMCCXYC24LXMXUVYJLBN3F2ISY")
 	if err != nil {
 		panic(err)
 	}
 
 	client := horizonclient.DefaultTestNetClient
-	clientWrpr := stellar.NewClient(client)
-	authService := authentication.NewService(clientWrpr, stellar.BuildChallengeTransaction, fiKeyPair)
+	clientWrpr := stellarsdk.NewClient(client)
+	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(func() (s string, e error) {
+		return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
+	})
+	authService := authentication.NewService(clientWrpr, challengeTxFact, fiKeyPair.(*keypair.Full))
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/stellar.toml", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/.well-known/stellar.toml", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.ServeFile(w, r, "stellar.toml")
 	})
- 
+
 	apiRouter := router.PathPrefix("/api/v1").Subrouter()
 	apiRouter.Use(ContentType)
 	apiRouter.Use(IDContext)

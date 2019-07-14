@@ -1,9 +1,7 @@
-# Sample stellar.toml
-
 FEDERATION_SERVER="https://api.domain.com/federation"
-AUTH_SERVER="https://api.domain.com/auth"
+AUTH_SERVER="http://localhost:8000/api/v1/authorizations"
 TRANSFER_SERVER="https://api.domain.com"
-SIGNING_KEY="GBBHQ7H4V6RRORKYLHTCAWP6MOHNORRFJSDPXDFYDGJB2LPZUFPXUEW3"
+SIGNING_KEY="GD67HZH252RMVKF2RPE7G5CCBOSYZVWWFPY64ILEOHCQWUEDAXC4VVLO"
 HORIZON_URL="https://horizon.domain.com"
 
 ACCOUNTS=[

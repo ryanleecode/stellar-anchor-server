@@ -1,20 +1,17 @@
-package stellar
+package stellarsdk
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/protocols/horizon"
-	"github.com/stellar/go/support/errors"
-	"regexp"
 )
 
-var horizonBadRequestRegex = regexp.MustCompile("bad_request")
-
-type InvalidAccountID struct {
-	message string
+type Client struct {
+	client *horizonclient.Client
 }
 
-func (e *InvalidAccountID) Error() string {
-	return e.message
+func NewClient(c *horizonclient.Client) *Client {
+	return &Client{client: c}
 }
 
 func (c *Client) AccountDetail(request horizonclient.AccountRequest) (*horizon.Account, error) {
