@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"net/http"
+	"stellar-fi-anchor/internal/deposits"
 )
 
 func NewRootHandler(
@@ -25,6 +26,10 @@ func NewRootHandler(
 	apiRouter.
 		HandleFunc("/authorizations", NewPostAuthHandler(authService)).
 		Methods("POST")
+
+	apiRouter.
+		HandleFunc("/deposit", deposits.NewGetDepositHandler()).
+		Methods("GET")
 
 	return handlers.RecoveryHandler()(router)
 }
