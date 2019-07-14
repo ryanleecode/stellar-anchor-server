@@ -28,23 +28,58 @@
 package main
 
 import (
-	"log"
+	"crypto/rand"
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"github.com/stellar/go/clients/horizonclient"
+	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	"net/http"
+	"os"
+	"stellar-fi-anchor/internal/authentication"
+	"stellar-fi-anchor/internal/random"
+	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 	"time"
 
+	_ "github.com/joho/godotenv/autoload"
 	"stellar-fi-anchor/internal"
 )
 
 func main() {
-	rootHandler := internal.NewRootHandler()
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		log.Fatalln("env variable PORT not defined")
+	}
+	privateKey, ok := os.LookupEnv("PRIVATE_KEY")
+	if !ok {
+		log.Fatalln("env variable PRIVATE_KEY not defined")
+	}
+	passphrase := network.TestNetworkPassphrase
+
+	fiKeyPair, err := keypair.Parse(privateKey)
+	if err != nil {
+		log.Fatalln("private key is not parsable")
+	}
+
+	client := horizonclient.DefaultTestNetClient
+	clientWrpr := stellarsdk.NewClient(client)
+	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(
+		passphrase,
+		func() (s string, e error) {
+			return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
+		})
+	authService := authentication.NewService(
+		clientWrpr, challengeTxFact, fiKeyPair.(*keypair.Full), passphrase)
+
+	rootHandler := internal.NewRootHandler(authService)
 
 	server := &http.Server{
 		Handler:      rootHandler,
-		Addr:         "127.0.0.1:8000",
+		Addr:         fmt.Sprintf("127.0.0.1:%s", port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Printf("Server is listening on port %d\n", 8000)
+	log.Printf("Server is listening on port %d", 8000)
 	log.Fatal(server.ListenAndServe())
 }

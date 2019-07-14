@@ -1,17 +1,9 @@
 package internal
 
 import (
-	"crypto/rand"
-	"github.com/stellar/go/clients/horizonclient"
-	"github.com/stellar/go/keypair"
-	"github.com/stellar/go/network"
-	"net/http"
-	"stellar-fi-anchor/internal/authentication"
-	"stellar-fi-anchor/internal/random"
-	"stellar-fi-anchor/internal/stellar-sdk"
-
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 var (
@@ -31,22 +23,9 @@ func newResponseWriter(
 	}
 }
 
-func NewRootHandler() http.Handler {
-	fiKeyPair, err := keypair.Parse("SA4VF5RNXMFWS4JPLXDRP3D3SLSKMAZMCCXYC24LXMXUVYJLBN3F2ISY")
-	if err != nil {
-		panic(err)
-	}
-
-	client := horizonclient.DefaultTestNetClient
-	clientWrpr := stellarsdk.NewClient(client)
-	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(
-		network.TestNetworkPassphrase,
-		func() (s string, e error) {
-			return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
-		})
-	authService := authentication.NewService(
-		clientWrpr, challengeTxFact, fiKeyPair.(*keypair.Full), network.TestNetworkPassphrase)
-
+func NewRootHandler(
+	authService AuthenticationService,
+) http.Handler {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/stellar.toml", func(w http.ResponseWriter, r *http.Request) {
