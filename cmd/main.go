@@ -31,7 +31,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
 	"net/http"
@@ -61,15 +60,13 @@ func main() {
 		log.Fatalln("private key is not parsable")
 	}
 
-	client := horizonclient.DefaultTestNetClient
-	clientWrpr := stellarsdk.NewClient(client)
 	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(
 		passphrase,
 		func() (s string, e error) {
 			return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
 		})
 	authService := authentication.NewService(
-		clientWrpr, challengeTxFact, fiKeyPair.(*keypair.Full), passphrase)
+		challengeTxFact, fiKeyPair.(*keypair.Full), passphrase)
 
 	rootHandler := internal.NewRootHandler(authService)
 

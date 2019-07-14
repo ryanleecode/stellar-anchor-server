@@ -22,15 +22,13 @@ type ChallengeTransactionFactory interface {
 }
 
 type Service struct {
-	stellarClient      StellarClient
 	challengeTxFactory ChallengeTransactionFactory
 	keypair            *keypair.Full
 	networkPassphrase  string
 }
 
-func NewService(client StellarClient, fact ChallengeTransactionFactory, kp *keypair.Full, passphrase string) *Service {
+func NewService(fact ChallengeTransactionFactory, kp *keypair.Full, passphrase string) *Service {
 	return &Service{
-		stellarClient:      client,
 		challengeTxFactory: fact,
 		keypair:            kp,
 		networkPassphrase:  passphrase,
@@ -38,18 +36,17 @@ func NewService(client StellarClient, fact ChallengeTransactionFactory, kp *keyp
 }
 
 func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (string, error) {
-	clientAccountRequest := horizonclient.AccountRequest{AccountID: id}
-	clientAccount, err := s.stellarClient.AccountDetail(clientAccountRequest)
-	if err != nil {
-		return "", errors.Wrap(err, "cannot fetch client account details")
+	clientAccount := txnbuild.SimpleAccount{
+		AccountID: id,
+		Sequence:  -1,
 	}
+
 	anchorPublicKey := s.keypair.Address()
-	serverAccountRequest := horizonclient.AccountRequest{AccountID: anchorPublicKey}
-	serverAccount, err := s.stellarClient.AccountDetail(serverAccountRequest)
-	if err != nil {
-		return "", errors.Wrap(err, "cannot fetch server account details")
+	serverAccount := txnbuild.SimpleAccount{
+		AccountID: anchorPublicKey,
+		Sequence:  -1,
 	}
-	txn, err := s.challengeTxFactory.Build(serverAccount, clientAccount)
+	txn, err := s.challengeTxFactory.Build(&serverAccount, &clientAccount)
 
 	if err != nil {
 		return "", errors.Wrap(err, "cannot build challenge txn")
