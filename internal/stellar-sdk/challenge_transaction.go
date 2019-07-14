@@ -2,18 +2,19 @@ package stellarsdk
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stellar/go/network"
 	"github.com/stellar/go/txnbuild"
 	"time"
 )
 
 type ChallengeTransactionFactory struct {
+	passphrase      string
 	nounceGenerator func() (string, error)
 }
 
-func NewChallengeTransactionFactory(nounceGenerator func() (string, error)) *ChallengeTransactionFactory {
+func NewChallengeTransactionFactory(networkPassphrase string, nounceGenerator func() (string, error)) *ChallengeTransactionFactory {
 	return &ChallengeTransactionFactory{
-		nounceGenerator,
+		passphrase:      networkPassphrase,
+		nounceGenerator: nounceGenerator,
 	}
 }
 
@@ -42,7 +43,7 @@ func (f *ChallengeTransactionFactory) Build(serverAccount Account, clientAccount
 				Value:         []byte(randomNounce),
 			},
 		},
-		Network: network.TestNetworkPassphrase,
+		Network: f.passphrase,
 	}
 	err = tx.Build()
 	if err != nil {

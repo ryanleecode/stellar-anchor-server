@@ -39,9 +39,11 @@ func NewRootHandler() http.Handler {
 
 	client := horizonclient.DefaultTestNetClient
 	clientWrpr := stellarsdk.NewClient(client)
-	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(func() (s string, e error) {
-		return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
-	})
+	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(
+		network.TestNetworkPassphrase,
+		func() (s string, e error) {
+			return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
+		})
 	authService := authentication.NewService(
 		clientWrpr, challengeTxFact, fiKeyPair.(*keypair.Full), network.TestNetworkPassphrase)
 
