@@ -3,6 +3,7 @@ package authentication
 import (
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	"github.com/stellar/go/xdr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -18,6 +19,7 @@ type ServiceSuite struct {
 	buildChallengeTransactionMock *mock.BuildChallengeTransactionMock
 	anchorKeyPair                 *keypair.Full
 	authService                   *Service
+	passphrase                    string
 }
 
 func (s *ServiceSuite) SetupTest() {
@@ -28,11 +30,13 @@ func (s *ServiceSuite) SetupTest() {
 	assert.NoError(s.T(), err)
 
 	s.anchorKeyPair = anchorKeyPair
+	s.passphrase = network.TestNetworkPassphrase
 
 	s.authService = NewService(
 		s.stellarClientMock,
 		s.buildChallengeTransactionMock,
-		s.anchorKeyPair)
+		s.anchorKeyPair,
+		s.passphrase)
 }
 
 func (s *ServiceSuite) generateChallengeTransaction(
@@ -219,11 +223,35 @@ func (s *ServiceSuite) TestValidationFailsIfOperationSourceAccountIsNil() {
 func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByAnchor() {
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, nil)
-	txBytes, err := tx.MarshalBinary()
-	assert.NoError(s.T(), err)
+	hash, err := network.HashTransaction(tx, s.passphrase)
 	randomKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
-	decorSig, err := randomKeyPair.SignDecorated(txBytes)
+	decorSig, err := randomKeyPair.SignDecorated(hash[:])
+	assert.NoError(s.T(), err)
+	txEnv := xdr.TransactionEnvelope{
+		Tx:         *tx,
+		Signatures: []xdr.DecoratedSignature{decorSig},
+	}
+
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
+		origErr := errors.Cause(x)
+		switch origErr.(type) {
+		case *TransactionIsNotSignedByAnchor:
+			return true
+		default:
+			return false
+		}
+	})
+	assert.True(s.T(),
+		len(filteredErrs.([]error)) == 1)
+}
+
+func (s *ServiceSuite) TestValidationFailsIfTransactionIsSignedByAnchorButWithTheWrongPassphrase() {
+	tx := s.generateChallengeTransaction(
+		s.anchorKeyPair.Address(), nil, nil)
+	hash, err := network.HashTransaction(tx, s.passphrase+"trash")
+	decorSig, err := s.anchorKeyPair.SignDecorated(hash[:])
 	assert.NoError(s.T(), err)
 	txEnv := xdr.TransactionEnvelope{
 		Tx:         *tx,
@@ -263,11 +291,52 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByClient() {
 
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, ops)
-	txBytes, err := tx.MarshalBinary()
-	assert.NoError(s.T(), err)
+	hash, err := network.HashTransaction(tx, s.passphrase)
 	randomKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
-	decorSig, err := randomKeyPair.SignDecorated(txBytes)
+	decorSig, err := randomKeyPair.SignDecorated(hash[:])
+	assert.NoError(s.T(), err)
+	txEnv := xdr.TransactionEnvelope{
+		Tx:         *tx,
+		Signatures: []xdr.DecoratedSignature{decorSig},
+	}
+
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
+		origErr := errors.Cause(x)
+		switch origErr.(type) {
+		case *TransactionIsNotSignedByClient:
+			return true
+		default:
+			return false
+		}
+	})
+	assert.True(s.T(),
+		len(filteredErrs.([]error)) == 1)
+}
+
+func (s *ServiceSuite) TestValidationFailsIfTransactionIsByClientButWithTheWrongPassphrase() {
+	clientKeyPair, err := keypair.Random()
+	assert.NoError(s.T(), err)
+
+	var clientAccountID xdr.AccountId
+	err = clientAccountID.SetAddress(clientKeyPair.Address())
+	assert.NoError(s.T(), err)
+
+	ops := []xdr.Operation{
+		{
+			Body: xdr.OperationBody{
+				Type:         xdr.OperationTypeManageData,
+				ManageDataOp: &xdr.ManageDataOp{},
+			},
+			SourceAccount: &clientAccountID,
+		}}
+
+	tx := s.generateChallengeTransaction(
+		s.anchorKeyPair.Address(), nil, ops)
+	hash, err := network.HashTransaction(tx, s.passphrase+"trash")
+	assert.NoError(s.T(), err)
+	decorSig, err := clientKeyPair.SignDecorated(hash[:])
 	assert.NoError(s.T(), err)
 	txEnv := xdr.TransactionEnvelope{
 		Tx:         *tx,

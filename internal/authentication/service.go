@@ -25,13 +25,15 @@ type Service struct {
 	stellarClient      StellarClient
 	challengeTxFactory ChallengeTransactionFactory
 	keypair            *keypair.Full
+	networkPassphrase  string
 }
 
-func NewService(stellarClient StellarClient, challengeTxFactory ChallengeTransactionFactory, keypair *keypair.Full) *Service {
+func NewService(client StellarClient, fact ChallengeTransactionFactory, kp *keypair.Full, passphrase string) *Service {
 	return &Service{
-		stellarClient:      stellarClient,
-		challengeTxFactory: challengeTxFactory,
-		keypair:            keypair,
+		stellarClient:      client,
+		challengeTxFactory: fact,
+		keypair:            kp,
+		networkPassphrase:  passphrase,
 	}
 }
 
@@ -107,7 +109,7 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 		}
 	}
 
-	hash, err := network.HashTransaction(&tx, network.TestNetworkPassphrase)
+	hash, err := network.HashTransaction(&tx, s.networkPassphrase)
 	if err != nil {
 		validationErrs = append(validationErrs, errors.Wrap(err, "cannot hash transaction"))
 		return validationErrs

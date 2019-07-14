@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 	"net/http"
 	"stellar-fi-anchor/internal/authentication"
 	"stellar-fi-anchor/internal/random"
@@ -38,10 +39,13 @@ func NewRootHandler() http.Handler {
 
 	client := horizonclient.DefaultTestNetClient
 	clientWrpr := stellarsdk.NewClient(client)
-	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(func() (s string, e error) {
-		return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
-	})
-	authService := authentication.NewService(clientWrpr, challengeTxFact, fiKeyPair.(*keypair.Full))
+	challengeTxFact := stellarsdk.NewChallengeTransactionFactory(
+		network.TestNetworkPassphrase,
+		func() (s string, e error) {
+			return random.NewGenerateString(random.NewGenerateBytes(rand.Read))(48)
+		})
+	authService := authentication.NewService(
+		clientWrpr, challengeTxFact, fiKeyPair.(*keypair.Full), network.TestNetworkPassphrase)
 
 	router := mux.NewRouter()
 
