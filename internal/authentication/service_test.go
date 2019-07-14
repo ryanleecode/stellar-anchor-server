@@ -15,7 +15,6 @@ import (
 
 type ServiceSuite struct {
 	suite.Suite
-	stellarClientMock             *mock.StellarClientMock
 	buildChallengeTransactionMock *mock.BuildChallengeTransactionMock
 	anchorKeyPair                 *keypair.Full
 	authService                   *Service
@@ -23,7 +22,6 @@ type ServiceSuite struct {
 }
 
 func (s *ServiceSuite) SetupTest() {
-	s.stellarClientMock = new(mock.StellarClientMock)
 	s.buildChallengeTransactionMock = new(mock.BuildChallengeTransactionMock)
 
 	anchorKeyPair, err := keypair.Random()
@@ -33,7 +31,6 @@ func (s *ServiceSuite) SetupTest() {
 	s.passphrase = network.TestNetworkPassphrase
 
 	s.authService = NewService(
-		s.stellarClientMock,
 		s.buildChallengeTransactionMock,
 		s.anchorKeyPair,
 		s.passphrase)
