@@ -71,11 +71,12 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 	txe *xdr.TransactionEnvelope,
 ) []error {
 	tx := txe.Tx
-	txAnchorPubKey := tx.SourceAccount.Address()
+	txAnchorPK := tx.SourceAccount.Address()
 	timebounds := tx.TimeBounds
 	operations := tx.Operations
 	validationErrs := make([]error, 0)
-	if txAnchorPubKey != s.keypair.Address() {
+	anchorPK := s.keypair.Address()
+	if txAnchorPK != anchorPK {
 		validationErrs = append(validationErrs, NewTransactionSourceAccountDoesntMatchAnchorPublicKey(
 			fmt.Sprintf("the transaction's address does not match the anchor's")))
 	}

@@ -4,7 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
-	"github.com/stellar/go/xdr"
+	"github.com/stellar/go/txnbuild"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
@@ -41,34 +41,43 @@ func (s *ServiceSuite) SetupTest() {
 
 func (s *ServiceSuite) generateChallengeTransaction(
 	clientAddress string,
-	timebounds *xdr.TimeBounds,
-	operations []xdr.Operation,
-) *xdr.Transaction {
-	pubKey := [32]byte{}
-	copy(pubKey[:], s.anchorKeyPair.Address())
-
-	sourceAccountKey, err := xdr.NewPublicKey(xdr.PublicKeyTypePublicKeyTypeEd25519, xdr.Uint256(pubKey))
-	assert.NoError(s.T(), err)
-
-	tx := xdr.Transaction{
-		SourceAccount: xdr.AccountId(sourceAccountKey),
-		TimeBounds:    timebounds,
-		Operations:    operations,
+	timebounds *txnbuild.Timebounds,
+	operations []txnbuild.Operation,
+) *txnbuild.Transaction {
+	tx := txnbuild.Transaction{
+		SourceAccount: &txnbuild.SimpleAccount{
+			AccountID: s.anchorKeyPair.Address(),
+			Sequence:  -1,
+		},
+		Operations: operations,
+		Network:    s.passphrase,
+	}
+	if timebounds != nil {
+		tx.Timebounds = *timebounds
+	} else {
+		tx.Timebounds = txnbuild.NewInfiniteTimeout()
 	}
 
 	return &tx
 }
 
 func (s *ServiceSuite) TestValidationFailsWhenSourceAccountDoesntMatchPublicKey() {
-	randomKeyPair, err := keypair.Random()
+	clientKP, err := keypair.Random()
 	assert.NoError(s.T(), err)
 
-	tx := s.generateChallengeTransaction(randomKeyPair.Address(), nil, nil)
-	txEnv := xdr.TransactionEnvelope{
-		Tx: *tx,
-	}
+	incorrectAnchorKP, err := keypair.Random()
+	assert.NoError(s.T(), err)
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	tx := s.generateChallengeTransaction(clientKP.Address(), nil, nil)
+	tx.SourceAccount = &txnbuild.SimpleAccount{
+		AccountID: incorrectAnchorKP.Address(),
+	}
+	err = tx.Build()
+	assert.NoError(s.T(), err)
+
+	txEnv := tx.TxEnvelope()
+
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -84,11 +93,12 @@ func (s *ServiceSuite) TestValidationFailsWhenSourceAccountDoesntMatchPublicKey(
 
 func (s *ServiceSuite) TestValidationFailsWhenTimeboundsIsNil() {
 	tx := s.generateChallengeTransaction(s.anchorKeyPair.Address(), nil, nil)
-	txEnv := xdr.TransactionEnvelope{
-		Tx: *tx,
-	}
+	err := tx.Build()
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
+	txEnv.Tx.TimeBounds = nil
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -103,19 +113,16 @@ func (s *ServiceSuite) TestValidationFailsWhenTimeboundsIsNil() {
 }
 
 func (s *ServiceSuite) TestValidationFailsWhenNowIsAfterTimeboundsMaxTime() {
-	now := xdr.TimePoint(time.Now().UTC().Unix())
-	timeBounds := xdr.TimeBounds{
-		MinTime: now - 3,
-		MaxTime: now - 1,
-	}
+	now := time.Now().UTC().Unix()
+	timeBounds := txnbuild.NewTimebounds(now-3, now-1)
 
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), &timeBounds, nil)
-	txEnv := xdr.TransactionEnvelope{
-		Tx: *tx,
-	}
+	err := tx.Build()
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -130,19 +137,16 @@ func (s *ServiceSuite) TestValidationFailsWhenNowIsAfterTimeboundsMaxTime() {
 }
 
 func (s *ServiceSuite) TestValidationFailsWhenNowIsBeforeTimeboundsMinTime() {
-	now := xdr.TimePoint(time.Now().UTC().Unix())
-	timeBounds := xdr.TimeBounds{
-		MinTime: now + 1,
-		MaxTime: now + 3,
-	}
+	now := time.Now().UTC().Unix()
+	timeBounds := txnbuild.NewTimebounds(now+1, now+3)
 
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), &timeBounds, nil)
-	txEnv := xdr.TransactionEnvelope{
-		Tx: *tx,
-	}
+	err := tx.Build()
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -158,12 +162,15 @@ func (s *ServiceSuite) TestValidationFailsWhenNowIsBeforeTimeboundsMinTime() {
 
 func (s *ServiceSuite) TestValidationFailsIfThereIsNotOnlyOneOperation() {
 	tx := s.generateChallengeTransaction(
-		s.anchorKeyPair.Address(), nil, []xdr.Operation{})
-	txEnv := xdr.TransactionEnvelope{
-		Tx: *tx,
-	}
+		s.anchorKeyPair.Address(), nil, []txnbuild.Operation{
+			&txnbuild.BumpSequence{},
+			&txnbuild.BumpSequence{},
+		})
+	err := tx.Build()
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -178,14 +185,16 @@ func (s *ServiceSuite) TestValidationFailsIfThereIsNotOnlyOneOperation() {
 }
 
 func (s *ServiceSuite) TestValidationFailsIfOperationIsNotAManageDataOperation() {
-	ops := []xdr.Operation{{Body: xdr.OperationBody{Type: xdr.OperationTypePayment}}}
+	ops := []txnbuild.Operation{
+		&txnbuild.BumpSequence{},
+	}
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, ops)
-	txEnv := xdr.TransactionEnvelope{
-		Tx: *tx,
-	}
+	err := tx.Build()
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -202,11 +211,11 @@ func (s *ServiceSuite) TestValidationFailsIfOperationIsNotAManageDataOperation()
 func (s *ServiceSuite) TestValidationFailsIfOperationSourceAccountIsNil() {
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, nil)
-	txEnv := xdr.TransactionEnvelope{
-		Tx: *tx,
-	}
+	err := tx.Build()
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -223,17 +232,15 @@ func (s *ServiceSuite) TestValidationFailsIfOperationSourceAccountIsNil() {
 func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByAnchor() {
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, nil)
-	hash, err := network.HashTransaction(tx, s.passphrase)
+	err := tx.Build()
+	assert.NoError(s.T(), err)
 	randomKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
-	decorSig, err := randomKeyPair.SignDecorated(hash[:])
+	err = tx.Sign(randomKeyPair)
 	assert.NoError(s.T(), err)
-	txEnv := xdr.TransactionEnvelope{
-		Tx:         *tx,
-		Signatures: []xdr.DecoratedSignature{decorSig},
-	}
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -248,17 +255,18 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByAnchor() {
 }
 
 func (s *ServiceSuite) TestValidationFailsIfTransactionIsSignedByAnchorButWithTheWrongPassphrase() {
+	s.passphrase = "private network 12345 - no haxor plz"
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, nil)
-	hash, err := network.HashTransaction(tx, s.passphrase+"trash")
-	decorSig, err := s.anchorKeyPair.SignDecorated(hash[:])
+	err := tx.Build()
 	assert.NoError(s.T(), err)
-	txEnv := xdr.TransactionEnvelope{
-		Tx:         *tx,
-		Signatures: []xdr.DecoratedSignature{decorSig},
-	}
+	randomKeyPair, err := keypair.Random()
+	assert.NoError(s.T(), err)
+	err = tx.Sign(randomKeyPair)
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -276,32 +284,23 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByClient() {
 	clientKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
 
-	var clientAccountID xdr.AccountId
-	err = clientAccountID.SetAddress(clientKeyPair.Address())
-	assert.NoError(s.T(), err)
-
-	ops := []xdr.Operation{
-		{
-			Body: xdr.OperationBody{
-				Type:         xdr.OperationTypeManageData,
-				ManageDataOp: &xdr.ManageDataOp{},
-			},
-			SourceAccount: &clientAccountID,
-		}}
+	ops := []txnbuild.Operation{
+		&txnbuild.ManageData{
+			SourceAccount: &txnbuild.SimpleAccount{AccountID: clientKeyPair.Address()},
+		},
+	}
 
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, ops)
-	hash, err := network.HashTransaction(tx, s.passphrase)
+	err = tx.Build()
+	assert.NoError(s.T(), err)
 	randomKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
-	decorSig, err := randomKeyPair.SignDecorated(hash[:])
+	err = tx.Sign(randomKeyPair)
 	assert.NoError(s.T(), err)
-	txEnv := xdr.TransactionEnvelope{
-		Tx:         *tx,
-		Signatures: []xdr.DecoratedSignature{decorSig},
-	}
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
@@ -316,34 +315,27 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByClient() {
 }
 
 func (s *ServiceSuite) TestValidationFailsIfTransactionIsByClientButWithTheWrongPassphrase() {
+	s.passphrase = "private network 12345 - no haxor plz"
 	clientKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
 
-	var clientAccountID xdr.AccountId
-	err = clientAccountID.SetAddress(clientKeyPair.Address())
-	assert.NoError(s.T(), err)
-
-	ops := []xdr.Operation{
-		{
-			Body: xdr.OperationBody{
-				Type:         xdr.OperationTypeManageData,
-				ManageDataOp: &xdr.ManageDataOp{},
-			},
-			SourceAccount: &clientAccountID,
-		}}
+	ops := []txnbuild.Operation{
+		&txnbuild.ManageData{
+			SourceAccount: &txnbuild.SimpleAccount{AccountID: clientKeyPair.Address()},
+		},
+	}
 
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, ops)
-	hash, err := network.HashTransaction(tx, s.passphrase+"trash")
+	err = tx.Build()
 	assert.NoError(s.T(), err)
-	decorSig, err := clientKeyPair.SignDecorated(hash[:])
+	randomKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
-	txEnv := xdr.TransactionEnvelope{
-		Tx:         *tx,
-		Signatures: []xdr.DecoratedSignature{decorSig},
-	}
+	err = tx.Sign(randomKeyPair)
+	assert.NoError(s.T(), err)
+	txEnv := tx.TxEnvelope()
 
-	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(&txEnv)
+	validationErrs := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
