@@ -27,10 +27,8 @@ func NewGetAuthHandler(authService AuthenticationService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		accountID := r.URL.Query().Get("account")
 		if accountID == "" {
-			errorPayload := Payload{
-				Error: map[string]interface{}{
-					"message": "account is a required query parameter",
-				},
+			errorPayload := map[string]interface{}{
+				"error": "account is a required query parameter",
 			}
 			w.WriteHeader(http.StatusBadRequest)
 			err := json.NewEncoder(w).Encode(&errorPayload)
@@ -45,10 +43,8 @@ func NewGetAuthHandler(authService AuthenticationService) http.HandlerFunc {
 			origErr := errors.Cause(err)
 			switch origErr.(type) {
 			case *stellarsdk.InvalidAccountID:
-				errorPayload := Payload{
-					Error: map[string]interface{}{
-						"message": "account id is invalid",
-					},
+				errorPayload := map[string]interface{}{
+					"error": "account id is invalid",
 				}
 				w.WriteHeader(http.StatusBadRequest)
 				err := json.NewEncoder(w).Encode(&errorPayload)
@@ -98,9 +94,9 @@ func NewPostAuthHandler(authService AuthenticationService) http.HandlerFunc {
 		v := govalidator.New(opts)
 		e := v.ValidateJSON()
 		if len(e) > 0 {
-			errorPayload := Payload{
-				Error: map[string]interface{}{
-					"message": "bad request",
+			errorPayload := map[string]interface{}{
+				"error": map[string]interface{}{
+					"message": "request validation error",
 					"errors":  e,
 				},
 			}
@@ -118,10 +114,8 @@ func NewPostAuthHandler(authService AuthenticationService) http.HandlerFunc {
 		_, err := xdr.Unmarshal(b64r, &txe)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			errorPayload := Payload{
-				Error: map[string]interface{}{
-					"message": "the transaction cannot be decoded or parsed",
-				},
+			errorPayload := map[string]interface{}{
+				"error": "the transaction cannot be decoded or parsed",
 			}
 			err := json.NewEncoder(w).Encode(&errorPayload)
 			if err != nil {
@@ -151,9 +145,10 @@ func NewPostAuthHandler(authService AuthenticationService) http.HandlerFunc {
 
 		if len(validationErrs) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
-			errorPayload := Payload{
-				Error: map[string]interface{}{
-					"errors": validationErrs,
+			errorPayload := map[string]interface{}{
+				"error": map[string]interface{}{
+					"message": "request validation error",
+					"errors":  validationErrs,
 				},
 			}
 			err := json.NewEncoder(w).Encode(&errorPayload)
