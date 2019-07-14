@@ -13,7 +13,7 @@ func NewGenerateBytes(r ByteReader) ByteGenerator {
 		_, err := r(b)
 		// Note that err == nil only if we read len(b) bytes.
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot generate cryptographic random bytes")
+			return nil, errors.Wrap(err, "cannot generate random bytes")
 		}
 
 		return b, nil
