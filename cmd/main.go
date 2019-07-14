@@ -28,23 +28,34 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	log "github.com/sirupsen/logrus"
 	"net/http"
+	"os"
 	"time"
 
+	_ "github.com/joho/godotenv/autoload"
 	"stellar-fi-anchor/internal"
 )
 
 func main() {
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		log.Fatalln("env variable PORT not defined")
+	}
+	config := internal.Config{
+		Port: port,
+	}
+
 	rootHandler := internal.NewRootHandler()
 
 	server := &http.Server{
 		Handler:      rootHandler,
-		Addr:         "127.0.0.1:8000",
+		Addr:         fmt.Sprintf("127.0.0.1:%s", config.GetPort()),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Printf("Server is listening on port %d\n", 8000)
+	log.Printf("Server is listening on port %d", 8000)
 	log.Fatal(server.ListenAndServe())
 }
