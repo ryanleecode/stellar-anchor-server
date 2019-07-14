@@ -2,18 +2,14 @@ package internal
 
 import (
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
-	"github.com/stellar/go/network"
 	"github.com/stellar/go/xdr"
 	"github.com/thedevsaddam/govalidator"
 	"net/http"
 	"stellar-fi-anchor/internal/authentication"
 	"stellar-fi-anchor/internal/stellar-sdk"
 	"strings"
-	"time"
 )
 
 type GetAuthResponse struct {
@@ -24,6 +20,7 @@ type AuthenticationService interface {
 	BuildSignEncodeChallengeTransactionForAccount(id string) (string, error)
 	ValidateClientSignedChallengeTransaction(
 		txe *xdr.TransactionEnvelope) []error
+	Authenticate(txe *xdr.TransactionEnvelope) (string, error)
 }
 
 func NewGetAuthHandler(authService AuthenticationService) http.HandlerFunc {
@@ -166,25 +163,9 @@ func NewPostAuthHandler(authService AuthenticationService) http.HandlerFunc {
 			return
 		}
 
-		now := time.Now()
-		txeHash, err := network.HashTransaction(&txe.Tx, network.TestNetworkPassphrase)
-		if err != nil {
-			panic(err)
-		}
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"iss": "",
-			"sub": txe.Tx.Operations[0].SourceAccount.Address(),
-			"iat": now.Unix(),
-			"exp": now.Add(24 * time.Hour).Unix(),
-			"jti": hex.EncodeToString(txeHash[:]),
-		})
+		jwtToken, err := authService.Authenticate(&txe)
 
-		encodedToken, err := token.SignedString([]byte("SA4VF5RNXMFWS4JPLXDRP3D3SLSKMAZMCCXYC24LXMXUVYJLBN3F2ISY"))
-		if err != nil {
-			panic(err)
-		}
-
-		dataPayload := tokenPayload{Token: encodedToken}
+		dataPayload := tokenPayload{Token: jwtToken}
 		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(&dataPayload)
 		if err != nil {
