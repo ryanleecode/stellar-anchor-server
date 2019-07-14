@@ -13,7 +13,7 @@ func TestByteGeneratorSuccess(t *testing.T) {
 
 	bytes, err := generator(6)
 	assert.NoError(t, err)
-	assert.EqualValues(t, bytes, []byte{0x26, 0xc5, 0xa4, 0x18, 0x2a, 0x81})
+	assert.EqualValues(t, []byte{0x26, 0xc5, 0xa4, 0x18, 0x2a, 0x81}, bytes)
 }
 
 func TestByteGeneratorFailure(t *testing.T) {

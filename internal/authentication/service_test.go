@@ -31,7 +31,7 @@ func (s *ServiceSuite) SetupTest() {
 
 	s.authService = NewService(
 		s.stellarClientMock,
-		s.buildChallengeTransactionMock.BuildChallengeTransaction,
+		s.buildChallengeTransactionMock,
 		s.anchorKeyPair)
 }
 

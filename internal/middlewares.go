@@ -33,7 +33,7 @@ func MethodContext(next http.Handler) http.Handler {
 					apiCallPrefix.ReplaceAllString(
 						request.RequestURI, ""), "/", ".", -1),
 				strings.ToLower(request.Method),
-			))
+			)[4:])
 
 		next.ServeHTTP(writer, request.WithContext(ctx))
 	})

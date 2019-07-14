@@ -1,17 +1,17 @@
 package mock
 
 import (
-	"github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stretchr/testify/mock"
+	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 )
 
 type BuildChallengeTransactionMock struct {
 	mock.Mock
 }
 
-func (m *BuildChallengeTransactionMock) BuildChallengeTransaction(
-	serverAccount *horizon.Account, clientAccount *horizon.Account,
+func (m *BuildChallengeTransactionMock) Build(
+	serverAccount stellarsdk.Account, clientAccount stellarsdk.Account,
 ) (*txnbuild.Transaction, error) {
 	args := m.Called(serverAccount, clientAccount)
 
