@@ -20,13 +20,13 @@ type GetAuthResponse struct {
 	Transaction string `json:"transaction"`
 }
 
-type AuthorizationService interface {
+type AuthenticationService interface {
 	BuildSignEncodeChallengeTransactionForAccount(id string) (string, error)
 	ValidateClientSignedChallengeTransaction(
 		txe *xdr.TransactionEnvelope) []error
 }
 
-func NewGetAuthHandler(authService AuthorizationService) http.HandlerFunc {
+func NewGetAuthHandler(authService AuthenticationService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		accountID := r.URL.Query().Get("account")
 		if accountID == "" {
@@ -81,7 +81,7 @@ type tokenPayload struct {
 	Token string `json:"token"`
 }
 
-func NewPostAuthHandler(authService AuthorizationService) http.HandlerFunc {
+func NewPostAuthHandler(authService AuthenticationService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rules := govalidator.MapData{
 			"transaction": []string{"required"},
