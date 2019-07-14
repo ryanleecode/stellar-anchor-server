@@ -109,7 +109,7 @@ func (s *Service) ValidateClientSignedChallengeTransaction(
 		}
 	}
 
-	hash, err := network.HashTransaction(&tx, network.TestNetworkPassphrase)
+	hash, err := network.HashTransaction(&tx, s.networkPassphrase)
 	if err != nil {
 		validationErrs = append(validationErrs, errors.Wrap(err, "cannot hash transaction"))
 		return validationErrs
