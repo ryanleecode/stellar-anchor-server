@@ -223,11 +223,10 @@ func (s *ServiceSuite) TestValidationFailsIfOperationSourceAccountIsNil() {
 func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByAnchor() {
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, nil)
-	txBytes, err := tx.MarshalBinary()
-	assert.NoError(s.T(), err)
+	hash, err := network.HashTransaction(tx, s.passphrase)
 	randomKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
-	decorSig, err := randomKeyPair.SignDecorated(txBytes)
+	decorSig, err := randomKeyPair.SignDecorated(hash[:])
 	assert.NoError(s.T(), err)
 	txEnv := xdr.TransactionEnvelope{
 		Tx:         *tx,
@@ -267,11 +266,10 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByClient() {
 
 	tx := s.generateChallengeTransaction(
 		s.anchorKeyPair.Address(), nil, ops)
-	txBytes, err := tx.MarshalBinary()
-	assert.NoError(s.T(), err)
+	hash, err := network.HashTransaction(tx, s.passphrase)
 	randomKeyPair, err := keypair.Random()
 	assert.NoError(s.T(), err)
-	decorSig, err := randomKeyPair.SignDecorated(txBytes)
+	decorSig, err := randomKeyPair.SignDecorated(hash[:])
 	assert.NoError(s.T(), err)
 	txEnv := xdr.TransactionEnvelope{
 		Tx:         *tx,
