@@ -12,6 +12,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v1.13.1 // indirect
+	github.com/drdgvhbh/go-ethereum-hdwallet v0.0.0-20190717030924-e5b49683f92e
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/elastic/gosigar v0.10.4 // indirect
 	github.com/ethereum/go-ethereum v1.9.0
