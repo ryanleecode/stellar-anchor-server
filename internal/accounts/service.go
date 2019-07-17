@@ -3,7 +3,7 @@ package accounts
 import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/jinzhu/gorm"
-	"stellar-fi-anchor/internal/models"
+	"stellar-fi-anchor/internal/db"
 )
 
 type Service struct {
@@ -18,10 +18,10 @@ func NewService(wallet accounts.Wallet, db *gorm.DB) *Service {
 	}
 }
 
-func (s *Service) NewAccount(assetType models.AssetType, stellarAccountID string) (*models.Account, error) {
-	var lastAccount models.Account
+func (s *Service) NewAccount(assetType db.AssetType, stellarAccountID string) (*db.Account, error) {
+	var lastAccount db.Account
 	s.db.Order("number desc").Where("asset_type = ?", assetType).First(&lastAccount)
-	newAccount := models.NewAccount(assetType, stellarAccountID, lastAccount.Number+1)
+	newAccount := db.NewAccount(assetType, stellarAccountID, lastAccount.Number+1)
 	s.db.Create(&newAccount)
 
 	return newAccount, nil

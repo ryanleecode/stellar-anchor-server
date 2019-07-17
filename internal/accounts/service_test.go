@@ -6,7 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 	mocket "github.com/selvatico/go-mocket"
 	"github.com/stretchr/testify/suite"
-	"stellar-fi-anchor/internal/models"
+	"stellar-fi-anchor/internal/db"
 	"stellar-fi-anchor/mock"
 	"testing"
 )
@@ -33,7 +33,7 @@ func (s *ServiceSuite) SetupTest() {
 func (s *ServiceSuite) TestNewAccount_AccountNumberIsIncrementedBasedOnAssetType() {
 	lastAccountNumber := 10
 	response := []map[string]interface{}{{
-		"asset_type":         models.Ethereum,
+		"asset_type":         db.Ethereum,
 		"stellar_account_id": "GDCANY73N6JU5TGXQJI6NSDYKCPPNO5EXZNO4WOCKTQLM7MCMEQKQVFA",
 		"number":             lastAccountNumber,
 	}}
@@ -43,7 +43,7 @@ func (s *ServiceSuite) TestNewAccount_AccountNumberIsIncrementedBasedOnAssetType
 
 	isInsertedCalled := false
 
-	assetType := models.Ethereum
+	assetType := db.Ethereum
 	stellarAccountID := "GAJN3BQGETOKZYI6BYNQJZ5ZQWURZX5TXNOEF7UPQAB4BHBCW5JEIOAD"
 	defer func() {
 		_, err := s.accountService.NewAccount(assetType, stellarAccountID)
@@ -65,7 +65,7 @@ func (s *ServiceSuite) TestNewAccount_AccountNumberIsIncrementedBasedOnAssetType
 			byteData, err := json.Marshal(mappedValues)
 			s.NoError(err)
 
-			createdAccount := models.Account{}
+			createdAccount := db.Account{}
 			err = createdAccount.UnmarshalJSON(byteData)
 			s.NoError(err)
 
