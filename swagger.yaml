@@ -1,28 +1,28 @@
 openapi: 3.0.0
-info: 
+info:
   title: Stellar Test Anchor
-  description: An implementation of a SEP compliation Stellar Anchor
+  description: An implementation of a SEP compliant Stellar Anchor
   version: 1.0.0
-paths: 
-  /v1/authorizations: 
-    get: 
+paths:
+  /v1/authorizations:
+    get:
       summary: Request A Challenge
       description: Requests a challenge transaction for the client to sign. Once signed, the challenge transaction is to be resubmitted back to the api.
       operationId: requestAChallenge
       tags:
-       - Authorization
-      parameters: 
-      - name: account
-        in: query
-        required: true
-        schema:
-          type: string
-      responses: 
+        - Authorization
+      parameters:
+        - name: account
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
         '200':
           description: Challenge Transaction
           content:
             application/json:
-              schema: 
+              schema:
                 $ref: '#/components/schemas/ChallengeTransaction'
           links:
             resubmit:
@@ -32,8 +32,8 @@ paths:
       description: Authenticates the user with a signed JWT token
       operationId: authenticate
       tags:
-       - Authorization
-      parameters: 
+        - Authorization
+      parameters:
         - name: account
           in: query
           required: true
@@ -48,7 +48,7 @@ paths:
       responses:
         '200':
           description: JWT Authentication Token
-          content: 
+          content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthToken'
@@ -59,32 +59,32 @@ paths:
       operationId: deposit
       tags:
         - Account
-      parameters: 
-      - name: account
-        in: query
-        required: true
-        schema:
-          type: string
-      - name: asset_code
-        in: query
-        required: true
-        schema:
-          type: string
+      parameters:
+        - name: account
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: asset_code
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: The deposit details
           content:
             application/json:
               schema:
-               $ref: '#/components/schemas/AccountDepositDetails'
-    
+                $ref: '#/components/schemas/AccountDepositDetails'
+
 components:
   links:
     ChallengeTransactionResubmit:
       operationId: authenticate
       parameters:
         transaction: $response.body#/transaction
-  schemas: 
+  schemas:
     AccountDepositDetails:
       type: object
       properties:
@@ -97,7 +97,7 @@ components:
         transaction:
           type: string
           example: AAAAAP3z5PruosqouovJ83RCC6WM1tYr8e4hZHHFC1CDBcXKAAAAZAAAAAAAAAAAAAAAAQAAAABdMUqUAAAAAF0xS8AAAAAAAAAAAQAAAAEAAAAAdV2iRRpbBLR3/Xjf+xxG0JLMVClrKtmUox/sjbp7bbsAAAAKAAAAFlN0ZWxsYXIgRkkgQW5jaG9yIGF1dGgAAAAAAAEAAABAYXk2WEE3LVRYejJiTFFQZEYyT05raXRRZ2RfNEZ0dk1aS2Zwc1BLd1pyZU96LUwwNHZkSk5OLURBU2pFZWx5MAAAAAAAAAABgwXFygAAAEDU15m0XSyjln1uObo+MPu5gFwZOVg+dm1iS89KPYNckzK9O//5rJqEDl2u8YRKKRrcNaVnnxF5iJWKLnQA8mcP
-      required: 
+      required:
         - transaction
     AuthToken:
       type: object
@@ -105,5 +105,5 @@ components:
         token:
           type: string
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NjM1OTc5NzYsImlhdCI6MTU2MzUxMTU3NiwiaXNzIjoiIiwianRpIjoiMmNhZDNiMWE1Yjk3MzllYzZiYzI5M2Y4ZTJiNjFiYmU3NjRhY2RkOTBlMTQ1MTQ1MGI2Nzg2OGIxNDIwYmNmMCIsInN1YiI6IkdCMlYzSVNGREpOUUpORFg3VjRONzZZNEkzSUpGVENVRkZWU1ZXTVVVTVA2WkROMlBOVzNXWjY0In0.TOgt5WkwNFrx0wZU23kA11to59pxhFR8V6mB22mUI5I
-      required: 
+      required:
         - token
