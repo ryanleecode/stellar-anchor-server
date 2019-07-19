@@ -1,81 +1,56 @@
 package accounts
 
 import (
-	"database/sql/driver"
-	"encoding/json"
 	"github.com/jinzhu/gorm"
 	mocket "github.com/selvatico/go-mocket"
 	"github.com/stretchr/testify/suite"
-	"stellar-fi-anchor/internal/db"
 	"stellar-fi-anchor/mock"
 	"testing"
 )
 
-type ServiceSuite struct {
+type EthereumAccountServiceSuite struct {
 	suite.Suite
-	accountService *Service
+	accountService *EthereumAccountService
+	wallet         *mock.WalletMock
 }
 
-func (s *ServiceSuite) SetupSuite() {
+func (s *EthereumAccountServiceSuite) SetupSuite() {
 	mocket.Catcher.Register()
 }
 
-func (s *ServiceSuite) SetupTest() {
+func (s *EthereumAccountServiceSuite) SetupTest() {
 	mocket.Catcher.Reset()
 	mocket.Catcher.Logging = true
 
 	db, err := gorm.Open(mocket.DriverName, "connection_string")
 	s.NoError(err)
-	walletMock := mock.WalletMock{}
-	s.accountService = NewService(walletMock, db)
+	s.wallet = &mock.WalletMock{}
+	s.accountService = NewService(s.wallet, db)
 }
 
-func (s *ServiceSuite) TestNewAccount_AccountNumberIsIncrementedBasedOnAssetType() {
+/*func (s *EthereumAccountServiceSuite) TestNewAccount_AccountNumberIsIncrementedBasedOnAssetType() {
 	lastAccountNumber := 10
-	response := []map[string]interface{}{{
-		"asset_type":         db.Ethereum,
+	queryResponse := []map[string]interface{}{{
+		"asset_type":         asset.Ethereum,
 		"stellar_account_id": "GDCANY73N6JU5TGXQJI6NSDYKCPPNO5EXZNO4WOCKTQLM7MCMEQKQVFA",
 		"number":             lastAccountNumber,
 	}}
 	mocket.Catcher.NewMock().
-		WithQuery(`SELECT * FROM "accounts"  WHERE "accounts"."deleted_at" IS NULL AND ((asset_type = ETH)) ORDER BY number desc,"accounts"."id" ASC LIMIT 1`).
-		WithReply(response)
+		WithQuery(`SELECT * FROM "accounts"  WHERE "accounts"."deleted_at" IS NULL AND (("accounts"."asset_type" = ETH)) ORDER BY number desc,"accounts"."id" ASC LIMIT 1`).
+		WithReply(queryResponse)
 
-	isInsertedCalled := false
+	ethAddress := "0x87fa4adb38EF0bF29F3EE8035db10fd13B70c0d1"
+	path := hdwallet.MustParseDerivationPath(fmt.Sprintf("m/44'/60'/0'/0/%d", lastAccountNumber+1))
+	s.wallet.On("Derive", path, false).Return(
+		accounts.Account{Address: common.HexToAddress(ethAddress)}, nil)
 
-	assetType := db.Ethereum
-	stellarAccountID := "GAJN3BQGETOKZYI6BYNQJZ5ZQWURZX5TXNOEF7UPQAB4BHBCW5JEIOAD"
-	defer func() {
-		_, err := s.accountService.NewAccount(assetType, stellarAccountID)
-		s.NoError(err)
-		s.True(isInsertedCalled)
-	}()
+	createdAccount, err := s.accountService.GetDepositingAccount(
+		"GAJN3BQGETOKZYI6BYNQJZ5ZQWURZX5TXNOEF7UPQAB4BHBCW5JEIOAD")
+	s.NoError(err)
 
-	mocket.Catcher.NewMock().
-		WithQuery(`INSERT  INTO "accounts" ("created_at","updated_at","deleted_at","asset_type","stellar_account_id","number") VALUES (?,?,?,?,?,?)`).
-		WithCallback(func(query string, values []driver.NamedValue) {
-			isInsertedCalled = true
-			var mappedValues []interface{}
-			someGeneratedID := 12
-			mappedValues = append(mappedValues, someGeneratedID)
-			for _, value := range values {
-				mappedValues = append(mappedValues, value.Value)
-			}
-
-			byteData, err := json.Marshal(mappedValues)
-			s.NoError(err)
-
-			createdAccount := db.Account{}
-			err = createdAccount.UnmarshalJSON(byteData)
-			s.NoError(err)
-
-			s.EqualValues(stellarAccountID, createdAccount.StellarAccountID)
-			s.EqualValues(assetType, createdAccount.AssetType)
-			s.EqualValues(someGeneratedID, createdAccount.ID)
-			s.EqualValues(lastAccountNumber+1, createdAccount.Number)
-		})
-}
+	assert.EqualValues(s.T(), lastAccountNumber+1, createdAccount.DepositInstructions())
+}*/
 
 func TestServiceSuite(t *testing.T) {
-	suite.Run(t, new(ServiceSuite))
+	suite.Run(t, new(EthereumAccountServiceSuite))
 }

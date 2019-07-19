@@ -60,6 +60,20 @@ func (s *Service) BuildSignEncodeChallengeTransactionForAccount(id string) (stri
 	return b64e, nil
 }
 
+func (s *Service) IsAuthorized(token string) bool {
+	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("auth failed")
+		}
+		return []byte(s.keypair.Seed()), nil
+	})
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (s *Service) ValidateClientSignedChallengeTransaction(
 	txe *xdr.TransactionEnvelope,
 ) []error {
@@ -164,7 +178,8 @@ func (s *Service) Authenticate(txe *xdr.TransactionEnvelope) (string, error) {
 		"exp": now.Add(24 * time.Hour).Unix(),
 		"jti": hex.EncodeToString(txeHash[:]),
 	})
-	signedJwt, err := token.SignedString([]byte(s.keypair.Seed()))
+	seed := s.keypair.Seed()
+	signedJwt, err := token.SignedString([]byte(seed))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to sign jwt token")
 	}

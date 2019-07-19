@@ -1,9 +1,6 @@
-package db
+package asset
 
-import (
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"time"
-)
+import "time"
 
 type AssetType string
 

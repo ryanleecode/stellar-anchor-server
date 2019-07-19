@@ -3,12 +3,22 @@ package internal
 import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/stellar/go/xdr"
 	"net/http"
-	"stellar-fi-anchor/internal/deposits"
+	"stellar-fi-anchor/internal/authentication"
 )
+
+type AuthenticationService interface {
+	BuildSignEncodeChallengeTransactionForAccount(id string) (string, error)
+	ValidateClientSignedChallengeTransaction(
+		txe *xdr.TransactionEnvelope) []error
+	Authenticate(txe *xdr.TransactionEnvelope) (string, error)
+	IsAuthorized(token string) bool
+}
 
 func NewRootHandler(
 	authService AuthenticationService,
+	accountServices []AccountService,
 ) http.Handler {
 	router := mux.NewRouter()
 
@@ -21,14 +31,18 @@ func NewRootHandler(
 	apiRouter.Use(ContentType)
 
 	apiRouter.
-		HandleFunc("/authorizations", NewGetAuthHandler(authService)).
+		HandleFunc("/authorizations", authentication.NewGetAuthHandler(authService)).
 		Methods("GET")
 	apiRouter.
-		HandleFunc("/authorizations", NewPostAuthHandler(authService)).
+		HandleFunc("/authorizations", authentication.NewPostAuthHandler(authService)).
 		Methods("POST")
 
-	apiRouter.
-		HandleFunc("/deposit", deposits.NewGetDepositHandler()).
+	authMiddleware := NewBearerAuthMiddleware(authService)
+	depositRouter := apiRouter.PathPrefix("/deposit").Subrouter()
+	depositRouter.Use(authMiddleware)
+
+	depositRouter.
+		HandleFunc("", NewGetDepositHandler(accountServices)).
 		Methods("GET")
 
 	return handlers.RecoveryHandler()(router)

@@ -1,4 +1,4 @@
-package internal
+package authentication
 
 import (
 	"encoding/base64"
@@ -7,7 +7,6 @@ import (
 	"github.com/stellar/go/xdr"
 	"github.com/thedevsaddam/govalidator"
 	"net/http"
-	"stellar-fi-anchor/internal/authentication"
 	"stellar-fi-anchor/internal/stellar-sdk"
 	"strings"
 )
@@ -127,15 +126,15 @@ func NewPostAuthHandler(authService AuthenticationService) http.HandlerFunc {
 		validationErrs := authService.ValidateClientSignedChallengeTransaction(&txe)
 		for _, e := range validationErrs {
 			switch e.(type) {
-			case *authentication.TransactionSourceAccountDoesntMatchAnchorPublicKey,
-				*authentication.TransactionIsMissingTimeBounds,
-				*authentication.TransactionChallengeExpired,
-				*authentication.TransactionChallengeIsNotAManageDataOperation,
-				*authentication.TransactionChallengeDoesNotHaveOnlyOneOperation,
-				*authentication.TransactionOperationSourceAccountIsEmpty,
-				*authentication.TransactionOperationsIsNil,
-				*authentication.TransactionIsNotSignedByAnchor,
-				*authentication.TransactionIsNotSignedByClient:
+			case *TransactionSourceAccountDoesntMatchAnchorPublicKey,
+				*TransactionIsMissingTimeBounds,
+				*TransactionChallengeExpired,
+				*TransactionChallengeIsNotAManageDataOperation,
+				*TransactionChallengeDoesNotHaveOnlyOneOperation,
+				*TransactionOperationSourceAccountIsEmpty,
+				*TransactionOperationsIsNil,
+				*TransactionIsNotSignedByAnchor,
+				*TransactionIsNotSignedByClient:
 
 				continue
 			default:
