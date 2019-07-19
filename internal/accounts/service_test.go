@@ -1,10 +1,10 @@
 package accounts
 
 import (
+	"github.com/drdgvhbh/stellar-fi-anchor/mock"
 	"github.com/jinzhu/gorm"
 	mocket "github.com/selvatico/go-mocket"
 	"github.com/stretchr/testify/suite"
-	"stellar-fi-anchor/mock"
 	"testing"
 )
 

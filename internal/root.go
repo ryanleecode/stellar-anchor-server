@@ -1,11 +1,11 @@
 package internal
 
 import (
+	"github.com/drdgvhbh/stellar-fi-anchor/internal/authentication"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/stellar/go/xdr"
 	"net/http"
-	"stellar-fi-anchor/internal/authentication"
 )
 
 type AuthenticationService interface {

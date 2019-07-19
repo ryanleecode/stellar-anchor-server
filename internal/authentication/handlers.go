@@ -3,11 +3,11 @@ package authentication
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/drdgvhbh/stellar-fi-anchor/internal/stellar-sdk"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/xdr"
 	"github.com/thedevsaddam/govalidator"
 	"net/http"
-	"stellar-fi-anchor/internal/stellar-sdk"
 	"strings"
 )
 

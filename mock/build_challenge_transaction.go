@@ -1,9 +1,9 @@
 package mock
 
 import (
+	stellarsdk "github.com/drdgvhbh/stellar-fi-anchor/internal/stellar-sdk"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stretchr/testify/mock"
-	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 )
 
 type BuildChallengeTransactionMock struct {

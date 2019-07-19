@@ -4,12 +4,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	stellarsdk "github.com/drdgvhbh/stellar-fi-anchor/internal/stellar-sdk"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stellar/go/xdr"
-	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 	"time"
 )
 

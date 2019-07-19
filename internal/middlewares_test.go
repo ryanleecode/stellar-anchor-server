@@ -1,10 +1,10 @@
 package internal_test
 
 import (
+	"github.com/drdgvhbh/stellar-fi-anchor/internal"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
-	"stellar-fi-anchor/internal"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

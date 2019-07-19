@@ -4,6 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	hdwallet "github.com/drdgvhbh/go-ethereum-hdwallet"
+	"github.com/drdgvhbh/stellar-fi-anchor/internal/accounts"
+	"github.com/drdgvhbh/stellar-fi-anchor/internal/asset"
+	"github.com/drdgvhbh/stellar-fi-anchor/internal/authentication"
+	"github.com/drdgvhbh/stellar-fi-anchor/internal/random"
+	stellarsdk "github.com/drdgvhbh/stellar-fi-anchor/internal/stellar-sdk"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
@@ -11,11 +16,6 @@ import (
 	"github.com/stellar/go/network"
 	"log"
 	"net/http"
-	"stellar-fi-anchor/internal/accounts"
-	"stellar-fi-anchor/internal/asset"
-	"stellar-fi-anchor/internal/authentication"
-	"stellar-fi-anchor/internal/random"
-	stellarsdk "stellar-fi-anchor/internal/stellar-sdk"
 )
 
 func Bootstrap(privateKey string, mnemonic string, db *gorm.DB) http.Handler {

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	hdwallet "github.com/drdgvhbh/go-ethereum-hdwallet"
+	"github.com/drdgvhbh/stellar-fi-anchor/internal/asset"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/jinzhu/gorm"
-	"stellar-fi-anchor/internal/asset"
 )
 
 type GenericAccount struct {
