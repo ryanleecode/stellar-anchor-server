@@ -1,4 +1,4 @@
-# Go API client for openapi
+# Go API client for sdk
 
 An implementation of a SEP compliant Stellar Anchor
 
@@ -23,7 +23,7 @@ go get github.com/antihax/optional
 Put the package under your project folder and add the following in import:
 
 ```golang
-import "./openapi"
+import "./sdk"
 ```
 
 ## Documentation for API Endpoints
