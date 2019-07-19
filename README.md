@@ -33,8 +33,3 @@ make test-e2e
 make cover
 make coveralls
 ```
-
-## Generating the Swagger Doc
-```sh
-make generate-docs
-```

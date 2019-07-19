@@ -16,6 +16,3 @@ coveralls:
 test-e2e:
 	cd ./test/simple-git-repo && git checkout master && git checkout --detach
 	go test ./test
-
-generate-docs:
-	swagger generate spec -b ./cmd -o swagger.json
