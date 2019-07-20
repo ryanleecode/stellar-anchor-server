@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"github.com/drdgvhbh/stellar-fi-anchor/mock"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
@@ -8,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
-	"stellar-fi-anchor/mock"
 	"testing"
 	"time"
 )
