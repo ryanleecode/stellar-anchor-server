@@ -59,6 +59,8 @@ paths:
       operationId: deposit
       tags:
         - Account
+      security:
+        - bearerAuth: []
       parameters:
         - name: account
           in: query
@@ -77,8 +79,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountDepositDetails'
-
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   links:
     ChallengeTransactionResubmit:
       operationId: authenticate
