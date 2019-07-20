@@ -85,6 +85,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountDepositDetails'
           description: The deposit details
+      security:
+      - bearerAuth: []
       summary: Get Account Deposit Details
       tags:
       - Account
@@ -123,3 +125,8 @@ components:
       required:
       - token
       type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

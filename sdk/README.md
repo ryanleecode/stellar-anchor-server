@@ -46,7 +46,21 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Authorization
 
- Endpoints do not require authorization.
+
+
+## bearerAuth
+
+- **Type**: HTTP basic authentication
+
+Example
+
+```golang
+auth := context.WithValue(context.Background(), sw.ContextBasicAuth, sw.BasicAuth{
+    UserName: "username",
+    Password: "password",
+})
+r, err := client.Service.Operation(auth, args)
+```
 
 
 ## Author
