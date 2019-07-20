@@ -87,6 +87,44 @@ func (s *DepositEthereumSuite) TestDepositRouteWorks() {
 	s.Regexp(regexp.MustCompile("^0x[a-fA-F0-9]{40}$"), d.How)
 }
 
+func (s *DepositEthereumSuite) TestMultipleDepositCallsForSameAssetShouldReturnSameAddress() {
+	ctx := context.Background()
+	account := s.clientKP.Address()
+	tx, _, err := s.apiClient.AuthorizationApi.RequestAChallenge(ctx, account)
+	s.NoError(err)
+
+	var txe xdr.TransactionEnvelope
+	err = xdr.SafeUnmarshalBase64(tx.Transaction, &txe)
+	s.NoError(err)
+
+	b := &build.TransactionEnvelopeBuilder{E: &txe}
+	b.Init()
+	err = b.MutateTX(build.TestNetwork)
+	s.NoError(err)
+	err = b.Mutate(build.Sign{Seed: s.clientKP.Seed()})
+	s.NoError(err)
+
+	signedTxe, err := b.Base64()
+
+	authToken, _, err := s.apiClient.
+		AuthorizationApi.
+		Authenticate(ctx, account, sdk.ChallengeTransaction{Transaction: signedTxe})
+	s.NoError(err)
+
+	authCtx := context.WithValue(ctx, sdk.ContextAccessToken, authToken.Token)
+	d, _, err := s.apiClient.AccountApi.Deposit(authCtx, account, "ETH")
+	s.NoError(err)
+
+	firstAddress := d.How
+
+	d, _, err = s.apiClient.AccountApi.Deposit(authCtx, account, "ETH")
+	s.NoError(err)
+
+	secondAddress := d.How
+
+	s.EqualValues(firstAddress, secondAddress)
+}
+
 func (s *DepositEthereumSuite) AfterTest(_, _ string) {
 	s.server.Close()
 	err := s.db.Close()
