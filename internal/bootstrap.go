@@ -18,7 +18,7 @@ import (
 	"net/http"
 )
 
-func Bootstrap(privateKey string, mnemonic string, db *gorm.DB) http.Handler {
+func Bootstrap(privateKey string, mnemonic string, db *gorm.DB, rpcClient *rpc.Client) http.Handler {
 	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
 	if err != nil {
 		log.Fatalln("cannot create accounts wallet")
@@ -29,12 +29,12 @@ func Bootstrap(privateKey string, mnemonic string, db *gorm.DB) http.Handler {
 		log.Fatalln("private key is not parsable")
 	}
 
-	ipcClient, err := rpc.DialIPC(context.TODO(), "/home/drd/.ethereum/goerli/geth.ipc")
+	ethClient := ethclient.NewClient(rpcClient)
+	chainId, err := ethClient.NetworkID(context.TODO()) // TODO
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
-	ethIpcClient := ethclient.NewClient(ipcClient)
-	ethIpcClient.ChainID(context.TODO()) // TODO
+	print(chainId)
 
 	db.AutoMigrate(asset.Asset{}, accounts.GenericAccount{})
 

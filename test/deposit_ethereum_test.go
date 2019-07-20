@@ -6,13 +6,16 @@ import (
 	hdwallet "github.com/drdgvhbh/go-ethereum-hdwallet"
 	"github.com/drdgvhbh/stellar-fi-anchor/internal"
 	"github.com/drdgvhbh/stellar-fi-anchor/sdk"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
+	"github.com/joho/godotenv"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/xdr"
 	"github.com/stretchr/testify/suite"
 	"net/http/httptest"
+	"os"
 	"regexp"
 	"testing"
 )
@@ -27,6 +30,8 @@ type DepositEthereumSuite struct {
 }
 
 func (s *DepositEthereumSuite) SetupSuite() {
+	err := godotenv.Load("../.env")
+	s.NoError(err)
 	serverKP, err := keypair.Random()
 	s.NoError(err)
 	client := horizonclient.DefaultTestNetClient
@@ -42,7 +47,10 @@ func (s *DepositEthereumSuite) SetupTest() {
 	db, err := gorm.Open(
 		"postgres", "host=localhost port=6666 user=postgres dbname=postgres sslmode=disable")
 	s.NoError(err)
-	rootHandler := internal.Bootstrap(serverPK, mnemonic, db)
+
+	rpcClient, err := rpc.DialHTTP(os.Getenv("INFURA_URL"))
+	s.NoError(err)
+	rootHandler := internal.Bootstrap(serverPK, mnemonic, db, rpcClient)
 	s.server = httptest.NewServer(rootHandler)
 	s.db = db
 

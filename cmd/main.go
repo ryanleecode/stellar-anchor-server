@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/drdgvhbh/stellar-fi-anchor/internal"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -34,7 +36,12 @@ func main() {
 		_ = db.Close()
 	}()
 
-	rootHandler := internal.Bootstrap(privateKey, mnemonic, db)
+	client, err := rpc.DialIPC(context.Background(), "/home/drd/.ethereum/goerli/geth.ipc")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rootHandler := internal.Bootstrap(privateKey, mnemonic, db, client)
 
 	server := &http.Server{
 		Handler:      rootHandler,
