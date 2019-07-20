@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/drdgvhbh/stellar-fi-anchor/internal"
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"stellar-fi-anchor/internal"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
