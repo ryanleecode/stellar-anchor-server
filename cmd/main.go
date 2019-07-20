@@ -6,29 +6,34 @@ import (
 	"github.com/drdgvhbh/stellar-fi-anchor/internal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"os"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		log.Fatalln("env variable PORT not defined")
-	}
-	privateKey, ok := os.LookupEnv("PRIVATE_KEY")
-	if !ok {
-		log.Fatalln("env variable PRIVATE_KEY not defined")
-	}
-	mnemonic, ok := os.LookupEnv("MNEMONIC")
-	if !ok {
-		log.Fatalln("env variable MNEMONIC not defined")
+	environment := internal.NewEnvironment()
+	envErrors := environment.Validate()
+	if len(envErrors) > 0 {
+		err := errors.New("")
+		for _, e := range envErrors {
+			err = errors.Wrapf(err, e.Error())
+		}
+
+		log.Fatalln(err)
 	}
 	db, err := gorm.Open(
-		"postgres", "host=localhost port=6666 user=postgres dbname=postgres sslmode=disable")
+		"postgres", fmt.Sprintf(
+			"host=%s port=%s user=%s dbname=%s sslmode=%s password=%s",
+			environment.DBHost,
+			environment.DBPort,
+			environment.DBUser,
+			environment.DBName,
+			environment.DBSSLMode,
+			environment.DBPassword))
 	if err != nil {
 		log.Fatalln(err, "failed to open database")
 	}
@@ -41,15 +46,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	rootHandler := internal.Bootstrap(privateKey, mnemonic, db, client)
+	rootHandler := internal.Bootstrap(environment.PrivateKey, environment.Mnemonic, db, client)
 
 	server := &http.Server{
 		Handler:      rootHandler,
-		Addr:         fmt.Sprintf("127.0.0.1:%s", port),
+		Addr:         fmt.Sprintf("127.0.0.1:%s", environment.Port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Printf("Server is listening on port %d", 8000)
+	log.Printf("Server is listening on port %s", environment.Port)
 	log.Fatal(server.ListenAndServe())
 }
