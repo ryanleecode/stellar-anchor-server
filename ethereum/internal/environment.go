@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/vendor/github.com/stellar/go/network"
 	"github.com/go-errors/errors"
 	"os"
 	"strconv"
@@ -89,7 +88,6 @@ func (e *Environment) Validate() []error {
 	if _, err := strconv.ParseUint(e.dbPort, 10, 32); err != nil {
 		errs = append(errs, errors.New("DB_PORT is not a valid number"))
 	}
-
 	if e.dbName == "" {
 		errs = append(errs, errors.New("DB_NAME is missing"))
 	}
