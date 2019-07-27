@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/vendor/github.com/stellar/go/network"
 	"github.com/go-errors/errors"
 	"os"
 	"strconv"
@@ -17,10 +18,6 @@ type Environment struct {
 	dbSSLMode         string
 	ethIPCEndpoint    string
 	networkPassphrase string
-	amqpPort          string
-	amqpHost          string
-	amqpUser          string
-	amqpPassword      string
 }
 
 func (e *Environment) Port() string {
@@ -63,22 +60,6 @@ func (e *Environment) NetworkPassphrase() string {
 	return e.networkPassphrase
 }
 
-func (e *Environment) AMQPPort() string {
-	return e.amqpPort
-}
-
-func (e *Environment) AMQPHost() string {
-	return e.amqpHost
-}
-
-func (e *Environment) AMQPUser() string {
-	return e.amqpUser
-}
-
-func (e *Environment) AMQPPassword() string {
-	return e.amqpPassword
-}
-
 func NewEnvironment() *Environment {
 	return &Environment{
 		port:              os.Getenv("PORT"),
@@ -91,10 +72,6 @@ func NewEnvironment() *Environment {
 		dbSSLMode:         os.Getenv("DB_SSL_MODE"),
 		networkPassphrase: os.Getenv("NETWORK_PASSPHRASE"),
 		ethIPCEndpoint:    os.Getenv("ETH_IPC_ENDPOINT"),
-		amqpPort:          os.Getenv("AMQP_PORT"),
-		amqpHost:          os.Getenv("AMQP_HOST"),
-		amqpPassword:      os.Getenv("AMQP_PASSWORD"),
-		amqpUser:          os.Getenv("AMQP_USER"),
 	}
 }
 
@@ -112,6 +89,7 @@ func (e *Environment) Validate() []error {
 	if _, err := strconv.ParseUint(e.dbPort, 10, 32); err != nil {
 		errs = append(errs, errors.New("DB_PORT is not a valid number"))
 	}
+
 	if e.dbName == "" {
 		errs = append(errs, errors.New("DB_NAME is missing"))
 	}
@@ -126,18 +104,6 @@ func (e *Environment) Validate() []error {
 	}
 	if e.ethIPCEndpoint == "" {
 		errs = append(errs, errors.New("ETH_IPC_ENDPOINT is missing"))
-	}
-	if e.amqpPort == "" {
-		errs = append(errs, errors.New("AMQP_PORT is missing"))
-	}
-	if e.amqpHost == "" {
-		errs = append(errs, errors.New("AMQP_HOST is missing"))
-	}
-	if e.amqpUser == "" {
-		errs = append(errs, errors.New("AMQP_USER is missing"))
-	}
-	if e.amqpPassword == "" {
-		errs = append(errs, errors.New("AMQP_PASSWORD is missing"))
 	}
 
 	return errs

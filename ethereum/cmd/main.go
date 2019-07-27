@@ -8,7 +8,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
 	"net/http"
 	"time"
 
@@ -21,7 +20,6 @@ type BootstrapParams struct {
 	mnemonic          string
 	db                *gorm.DB
 	rpcClient         *rpc.Client
-	rmq               *amqp.Connection
 }
 
 func NewBootstrapParams(env internal.Environment) (*BootstrapParams, error) {
@@ -41,17 +39,11 @@ func NewBootstrapParams(env internal.Environment) (*BootstrapParams, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to ethereum ipc client")
 	}
-	rmq, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s",
-		env.AMQPUser(), env.AMQPPassword(), env.AMQPHost(), env.AMQPPort()))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect to rabbit mq")
-	}
 	return &BootstrapParams{
 		networkPassphrase: env.NetworkPassphrase(),
 		mnemonic:          env.Mnemonic(),
 		db:                db,
 		rpcClient:         ipcClient,
-		rmq:               rmq,
 	}, nil
 }
 
@@ -89,62 +81,8 @@ func main() {
 	defer func() {
 		_ = bootstrapParams.DB().Close()
 		bootstrapParams.RPCClient().Close()
-		_ = bootstrapParams.rmq.Close()
 	}()
 
-	/*rmq := bootstrapParams.rmq
-
-	ch, err := rmq.Channel()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	body := "Hello World!"
-	err = ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
-		})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	msgs, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		true,   // auto-ack
-		false,  // exclusive
-		false,  // no-local
-		false,  // no-wait
-		nil,    // args
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//forever := make(chan bool)
-	go func() {
-		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
-		}
-	}()
-*/
 	rootHandler := internal.Bootstrap(bootstrapParams)
 
 	server := &http.Server{
