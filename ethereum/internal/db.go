@@ -34,15 +34,15 @@ func NewDBWithConfig(db *gorm.DB, conf DBConfig) *DB {
 }
 
 func (d DB) Begin() *DB {
-	return NewDBWithConfig(d.db.Begin(), d.conf)
+	return &DB{db: d.db.Begin(), conf: d.conf}
 }
 
 func (d DB) RollbackUnlessCommitted() *DB {
-	return NewDBWithConfig(d.db.RollbackUnlessCommitted(), d.conf)
+	return &DB{db: d.db.RollbackUnlessCommitted(), conf: d.conf}
 }
 
 func (d DB) Commit() *DB {
-	return NewDBWithConfig(d.db.Commit(), d.conf)
+	return &DB{db: d.db.Commit(), conf: d.conf}
 }
 
 func (d DB) AddBlock(b Block) error {

@@ -146,7 +146,7 @@ func Bootstrap(params BootstrapParams) http.Handler {
 						Warnf("failed to add block")
 					return
 				}
-
+				db.Commit()
 			}()
 		}
 	}()
