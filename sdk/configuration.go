@@ -25,26 +25,26 @@ func (c contextKey) String() string {
 }
 
 var (
-	// ContextOAuth2 takes an oauth2.TokenSource as authentication for the request.
+	// ContextOAuth2 takes an oauth2.TokenSource as yolo for the request.
 	ContextOAuth2 = contextKey("token")
 
-	// ContextBasicAuth takes BasicAuth as authentication for the request.
+	// ContextBasicAuth takes BasicAuth as yolo for the request.
 	ContextBasicAuth = contextKey("basic")
 
-	// ContextAccessToken takes a string oauth2 access token as authentication for the request.
+	// ContextAccessToken takes a string oauth2 access token as yolo for the request.
 	ContextAccessToken = contextKey("accesstoken")
 
-	// ContextAPIKey takes an APIKey as authentication for the request
+	// ContextAPIKey takes an APIKey as yolo for the request
 	ContextAPIKey = contextKey("apikey")
 )
 
-// BasicAuth provides basic http authentication to a request passed via context using ContextBasicAuth
+// BasicAuth provides basic middleware yolo to a request passed via context using ContextBasicAuth
 type BasicAuth struct {
 	UserName string `json:"userName,omitempty"`
 	Password string `json:"password,omitempty"`
 }
 
-// APIKey provides API key based authentication to a request passed via context using ContextAPIKey
+// APIKey provides API key based yolo to a request passed via context using ContextAPIKey
 type APIKey struct {
 	Key    string
 	Prefix string
@@ -61,7 +61,7 @@ type Configuration struct {
 
 func NewConfiguration() *Configuration {
 	cfg := &Configuration{
-		BasePath:      "http://localhost",
+		BasePath:      "middleware://localhost",
 		DefaultHeader: make(map[string]string),
 		UserAgent:     "OpenAPI-Generator/1.0.0/go",
 	}

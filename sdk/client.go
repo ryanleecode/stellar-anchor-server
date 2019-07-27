@@ -56,10 +56,10 @@ type service struct {
 }
 
 // NewAPIClient creates a new API client. Requires a userAgent string describing your application.
-// optionally a custom http.Client to allow for advanced features such as caching.
+// optionally a custom middleware.Client to allow for advanced features such as caching.
 func NewAPIClient(cfg *Configuration) *APIClient {
-	if cfg.HTTPClient == nil {
-		cfg.HTTPClient = http.DefaultClient
+	if HTTPClient == nil {
+		HTTPClient = http.DefaultClient
 	}
 
 	c := &APIClient{}
@@ -158,7 +158,6 @@ func parameterToJson(obj interface{}) (string, error) {
 	return string(jsonBuf), err
 }
 
-
 // callAPI do the request.
 func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
 	return c.cfg.HTTPClient.Do(request)
@@ -166,7 +165,7 @@ func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
 
 // Change base path to allow switching to mocks
 func (c *APIClient) ChangeBasePath(path string) {
-	c.cfg.BasePath = path
+	BasePath = path
 }
 
 // prepareRequest build the request
@@ -255,13 +254,13 @@ func (c *APIClient) prepareRequest(
 	}
 
 	// Override request host, if applicable
-	if c.cfg.Host != "" {
-		url.Host = c.cfg.Host
+	if Host != "" {
+		url.Host = Host
 	}
 
 	// Override request scheme, if applicable
-	if c.cfg.Scheme != "" {
-		url.Scheme = c.cfg.Scheme
+	if Scheme != "" {
+		url.Scheme = Scheme
 	}
 
 	// Adding Query Param
@@ -295,15 +294,15 @@ func (c *APIClient) prepareRequest(
 	}
 
 	// Add the user agent to the request.
-	localVarRequest.Header.Add("User-Agent", c.cfg.UserAgent)
+	localVarRequest.Header.Add("User-Agent", UserAgent)
 
 	if ctx != nil {
 		// add context to the request
 		localVarRequest = localVarRequest.WithContext(ctx)
 
-		// Walk through any authentication.
+		// Walk through any ethereum.
 
-		// OAuth2 authentication
+		// OAuth2 ethereum
 		if tok, ok := ctx.Value(ContextOAuth2).(oauth2.TokenSource); ok {
 			// We were able to grab an oauth2 token from the context
 			var latestToken *oauth2.Token
@@ -316,7 +315,7 @@ func (c *APIClient) prepareRequest(
 
 		// Basic HTTP Authentication
 		if auth, ok := ctx.Value(ContextBasicAuth).(BasicAuth); ok {
-			localVarRequest.SetBasicAuth(auth.UserName, auth.Password)
+			localVarRequest.SetBasicAuth(UserName, Password)
 		}
 
 		// AccessToken Authentication
@@ -325,7 +324,7 @@ func (c *APIClient) prepareRequest(
 		}
 	}
 
-	for header, value := range c.cfg.DefaultHeader {
+	for header, value := range DefaultHeader {
 		localVarRequest.Header.Add(header, value)
 	}
 

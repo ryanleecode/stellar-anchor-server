@@ -20,10 +20,10 @@ type APIResponse struct {
 	// Operation is the name of the OpenAPI operation.
 	Operation string `json:"operation,omitempty"`
 	// RequestURL is the request URL. This value is always available, even if the
-	// embedded *http.Response is nil.
+	// embedded *middleware.Response is nil.
 	RequestURL string `json:"url,omitempty"`
 	// Method is the HTTP method used for the request.  This value is always
-	// available, even if the embedded *http.Response is nil.
+	// available, even if the embedded *middleware.Response is nil.
 	Method string `json:"method,omitempty"`
 	// Payload holds the contents of the response body (which may be nil or empty).
 	// This is provided here as the raw response.Body() reader will have already
