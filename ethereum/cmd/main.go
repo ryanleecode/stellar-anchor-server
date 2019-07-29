@@ -16,14 +16,23 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-type BootstrapParams struct {
-	networkPassphrase string
-	mnemonic          string
-	db                *gorm.DB
-	rpcClient         *rpc.Client
-}
+func main() {
+	logger := log.New()
+	logger.SetLevel(log.TraceLevel)
+	logger.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
 
-func NewBootstrapParams(env internal.Environment) (*BootstrapParams, error) {
+	env := internal.NewEnvironment()
+	envErrors := env.Validate()
+	if len(envErrors) > 0 {
+		err := errors.New("")
+		for _, e := range envErrors {
+			err = errors.Wrapf(err, e.Error())
+		}
+
+		logger.Fatalln(err)
+	}
 	db, err := gorm.Open(
 		"postgres", fmt.Sprintf(
 			"host=%s port=%s user=%s dbname=%s sslmode=%s password=%s",
@@ -34,71 +43,26 @@ func NewBootstrapParams(env internal.Environment) (*BootstrapParams, error) {
 			env.DBSSLMode(),
 			env.DBPassword()))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to open database")
+		log.Fatalln(errors.Wrap(err, "failed to open database"))
 	}
 	ipcClient, err := rpc.DialIPC(context.Background(), env.EthIPCEndpoint())
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect to ethereum ipc client")
-	}
-	return &BootstrapParams{
-		networkPassphrase: env.NetworkPassphrase(),
-		mnemonic:          env.Mnemonic(),
-		db:                db,
-		rpcClient:         ipcClient,
-	}, nil
-}
-
-func (p *BootstrapParams) NetworkPassphrase() string {
-	return p.networkPassphrase
-}
-
-func (p *BootstrapParams) Mnemonic() string {
-	return p.mnemonic
-}
-
-func (p *BootstrapParams) DB() *gorm.DB {
-	return p.db
-}
-
-func (p *BootstrapParams) RPCClient() *rpc.Client {
-	return p.rpcClient
-}
-
-func main() {
-	logger := log.New()
-	logger.SetLevel(log.TraceLevel)
-	logger.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-
-	environment := internal.NewEnvironment()
-	envErrors := environment.Validate()
-	if len(envErrors) > 0 {
-		err := errors.New("")
-		for _, e := range envErrors {
-			err = errors.Wrapf(err, e.Error())
-		}
-
-		logger.Fatalln(err)
-	}
-	bootstrapParams, err := NewBootstrapParams(*environment)
-	if err != nil {
-		logger.Fatalln(err)
+		log.Fatalln(errors.Wrap(err, "failed to connect to ethereum ipc client"))
 	}
 	defer func() {
-		_ = bootstrapParams.DB().Close()
-		bootstrapParams.RPCClient().Close()
+		_ = db.Close()
+		ipcClient.Close()
 	}()
 
-	rootHandler := internal.Bootstrap(bootstrapParams, logger)
+	rootHandler := internal.Bootstrap(env.NetworkPassphrase(), env.Mnemonic(), db, ipcClient, logger)
 
 	server := &http.Server{
 		Handler:      rootHandler,
-		Addr:         fmt.Sprintf("127.0.0.1:%s", environment.Port()),
+		Addr:         fmt.Sprintf("127.0.0.1:%s", env.Port()),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logger.Printf("Server is listening on port %s", environment.Port())
+	logger.Printf("Server is listening on port %s", env.Port())
 	logger.Fatal(server.ListenAndServe())
 }

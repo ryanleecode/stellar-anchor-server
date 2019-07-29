@@ -29,21 +29,14 @@ import (
 	"github.com/stellar/go/keypair"
 )
 
-type BootstrapParams interface {
-	NetworkPassphrase() string
-	Mnemonic() string
-	DB() *gorm.DB
-	RPCClient() *rpc.Client
-}
-
-func Bootstrap(params BootstrapParams, logger *log.Logger) http.Handler {
-	w, err := hdwallet.NewFromMnemonic(params.Mnemonic())
+func Bootstrap(networkPassphrase string, mnemonic string, db *gorm.DB, rpcClient *rpc.Client, logger *log.Logger) http.Handler {
+	w, err := hdwallet.NewFromMnemonic(mnemonic)
 	if err != nil {
 		logger.Fatalln(errors.Wrap(err, "cannot create hd wallet").Error())
 	}
 	wallet := ethwallet.NewWallet(w)
 
-	ethClient := ethclient.NewClient(params.RPCClient())
+	ethClient := ethclient.NewClient(rpcClient)
 	path := hdwallet.MustParseDerivationPath(fmt.Sprintf("m/44'/60'/0'/%d", 1))
 	pk, err := wallet.PrivateKeyBytes(path)
 	if err != nil {
@@ -61,10 +54,8 @@ func Bootstrap(params BootstrapParams, logger *log.Logger) http.Handler {
 	issuer := data.NewIssuer(
 		issuingKP,
 		horizonclient.DefaultTestNetClient,
-		params.NetworkPassphrase(),
+		networkPassphrase,
 		txnbuild.CreditAsset{Code: "ETH", Issuer: issuingKP.Address()})
-
-	db := params.DB()
 
 	ethBlockchain := data.NewEthereumBlockchain(ethClient, func(num uint64) logic.Block {
 		return *logic.NewBlock(num)
