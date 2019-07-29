@@ -82,7 +82,7 @@ paths:
 components:
   securitySchemes:
     bearerAuth:
-      type: middleware
+      type: http
       scheme: bearer
       bearerFormat: JWT
   links:

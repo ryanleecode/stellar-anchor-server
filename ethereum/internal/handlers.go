@@ -2,10 +2,13 @@ package internal
 
 import (
 	"encoding/json"
+	"net/http"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/logic"
+
 	"github.com/gorilla/schema"
 	_ "github.com/gorilla/schema"
 	"github.com/thedevsaddam/govalidator"
-	"net/http"
 )
 
 type GetDepositQueryParams struct {
@@ -18,7 +21,7 @@ type Account = interface {
 }
 
 type AccountService interface {
-	GetDepositingAccount(stellarAccountID string) (Account, error)
+	GetDepositAccount(stellarAcctAddr string) (*logic.DepositAccount, error)
 }
 
 func NewGetDepositHandler(accountService AccountService) http.HandlerFunc {
@@ -63,7 +66,7 @@ func NewGetDepositHandler(accountService AccountService) http.HandlerFunc {
 			panic(err)
 		}
 
-		account, err := accountService.GetDepositingAccount(queryParams.Account)
+		account, err := accountService.GetDepositAccount(queryParams.Account)
 		if err != nil {
 			panic(err)
 		}

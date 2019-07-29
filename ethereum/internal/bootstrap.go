@@ -2,10 +2,17 @@ package internal
 
 import (
 	"context"
-	"math"
-	"math/big"
+	"fmt"
 	"net/http"
-	"strconv"
+	"time"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/ethwallet"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/stellar"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/logic"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/data"
 
 	log "github.com/sirupsen/logrus"
 
@@ -14,12 +21,11 @@ import (
 	"github.com/stellar/go/clients/horizonclient"
 
 	hdwallet "github.com/drdgvhbh/go-ethereum-hdwallet"
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/accounts"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"github.com/robfig/cron"
 	"github.com/stellar/go/keypair"
 )
 
@@ -31,23 +37,15 @@ type BootstrapParams interface {
 }
 
 func Bootstrap(params BootstrapParams) http.Handler {
-	params.DB().AutoMigrate(accounts.AnchorAccount{})
-
-	wallet, err := hdwallet.NewFromMnemonic(params.Mnemonic())
+	w, err := hdwallet.NewFromMnemonic(params.Mnemonic())
 	if err != nil {
 		log.Fatalln(errors.Wrap(err, "cannot create hd wallet").Error())
 	}
+	wallet := ethwallet.NewWallet(w)
 
 	ethClient := ethclient.NewClient(params.RPCClient())
-	headers := make(chan *types.Header)
-	sub, err := ethClient.SubscribeNewHead(context.Background(), headers)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	path := hdwallet.MustParseDerivationPath("m/44'/60'/0'/0/1")
-	issuingAct, err := wallet.Derive(path, false)
-	pk, err := wallet.PrivateKeyBytes(issuingAct)
+	path := hdwallet.MustParseDerivationPath(fmt.Sprintf("m/44'/60'/0'/%d", 1))
+	pk, err := wallet.PrivateKeyBytes(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -58,72 +56,102 @@ func Bootstrap(params BootstrapParams) http.Handler {
 		log.Fatalln(err)
 	}
 
-	actService := accounts.NewService(wallet, params.DB())
-	issuer := NewIssuer(
+	log.Println(issuingKP.Address(), issuingKP.Seed())
+
+	issuer := data.NewIssuer(
 		issuingKP,
 		horizonclient.DefaultTestNetClient,
 		params.NetworkPassphrase(),
 		txnbuild.CreditAsset{Code: "ETH", Issuer: issuingKP.Address()})
 
-	go func() {
+	db := params.DB()
+
+	ethBlockchain := data.NewEthereumBlockchain(ethClient, func(num uint64) logic.Block {
+		return *logic.NewBlock(num)
+	})
+	ledger := data.NewLedger()
+	acctStorage := data.NewAccountStorage(wallet)
+	gateway := data.NewLogicGateway(ledger, ethBlockchain, acctStorage, db)
+
+	acctService := logic.NewAccountService(gateway, issuer)
+
+	blockService := logic.NewBlockService(gateway,
+		func(tx logic.EthereumTransaction) (bool, error) {
+			act, err := acctService.FindAccountFrom(tx.To())
+			if err != nil {
+				return false, err
+			}
+			return act != nil, err
+		})
+	transactionService := logic.NewTransactionService(acctService, stellar.FormatToAssetPrecision, gateway)
+
+	c := cron.New()
+	if err := c.AddFunc("@every 10s", func() {
+		ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*9900)
 		for {
-			db := NewDB(params.DB().Begin())
+			if ctx.Err() != nil {
+				break
+			}
 
-			func() {
-				defer db.RollbackUnlessCommitted()
+			l := gateway.Begin()
 
-				block, err := db.LastProcessedBlock()
-				if err != nil {
-					log.WithError(err).Warn("failed to retrieve last processed block")
-					return
+			didProcess, err := blockService.ProcessNextBlock(ctx, l)
+			if err != nil {
+				l.Rollback()
+				log.WithError(err).Error("failed to process next block")
+				break
+			}
+			if !didProcess {
+				l.Rollback()
+				break
+			}
+			l.Commit()
+		}
+	}); err != nil {
+		log.Fatalln(errors.Wrapf(err, "failed to add process blocks cron job"))
+	}
+	if err := c.AddFunc("@every 5s", func() {
+		ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*4900)
+		for {
+			if ctx.Err() != nil {
+				break
+			}
+
+			l := gateway.Begin()
+
+			err := transactionService.ProcessDeposit(ctx, l)
+			if err != nil {
+				l.Rollback()
+				log.WithError(err).Error("failed to process next deposit transaction")
+
+				errCause := errors.Cause(err)
+				switch errCause.(type) {
+				case *horizonclient.Error:
+					horizonErr := errCause.(*horizonclient.Error)
+					log.WithError(errCause).WithFields(log.Fields{
+						"title":  horizonErr.Problem.Title,
+						"type":   horizonErr.Problem.Type,
+						"detail": horizonErr.Problem.Detail,
+						"status": horizonErr.Problem.Status,
+						"extras": horizonErr.Problem.Extras,
+					}).Errorf("horizon error")
+					break
+				default:
+					break
 				}
-				headHeader, err := ethClient.HeaderByNumber(context.Background(), nil)
-				if err != nil {
-					log.WithError(err).Warn("failed to retrieve head block header")
-					return
-				}
+				break
+			}
+			l.Commit()
+		}
+	}); err != nil {
+		log.Fatalln(errors.Wrapf(err, "failed to add process transactions cron job"))
+	}
+	c.Start()
 
-				var chainBlock *types.Block
-				var blockNumber uint64
-				isOutOfSync := block.Number < (headHeader.Number.Uint64() - 1)
-				if isOutOfSync {
-					nextNum := block.Number + 1
-					chainBlock, err = ethClient.BlockByNumber(context.Background(), new(big.Int).SetUint64(nextNum))
-					if err != nil {
-						log.WithError(err).
-							WithField("block_number", nextNum).
-							Warnf("failed to retrieve block")
-						return
-					}
-					blockNumber = nextNum
-				} else {
-					select {
-					case err := <-sub.Err():
-						log.Fatal(err)
-					case header := <-headers:
-						chainBlock, err = ethClient.BlockByHash(context.Background(), header.Hash())
-						if err != nil {
-							log.WithError(err).Warn("failed to retrieve head block")
-							return
-						}
-						blockNumber = chainBlock.Number().Uint64()
-					}
-				}
+	return NewRootHandler(acctService)
+}
 
-				for _, tx := range chainBlock.Transactions() {
-					notAValueTx := tx.To() == nil || tx.Value() == nil
-					if notAValueTx {
-						continue
-					}
-
-					destAddr := tx.To().Hex()
-					account := actService.FindAccount(destAddr)
-					acctNotInOurRecords := account == nil
-					if acctNotInOurRecords {
-						continue
-					}
-
-					txHash := tx.Hash().Hex()
+/*					txHash := tx.Hash().Hex()
 					gwei := tx.Value()
 					depositAmount := int64(truncateToStellarPrecision(gwei))
 					err := issuer.IssueWithMemo(
@@ -138,32 +166,4 @@ func Bootstrap(params BootstrapParams) http.Handler {
 							log.Println(err.Error())
 							return
 						}
-					}
-				}
-				if err = db.AddBlock(*NewBlock(blockNumber)); err != nil {
-					log.WithError(err).
-						WithField("block_number", blockNumber).
-						Warnf("failed to add block")
-					return
-				}
-				db.Commit()
-			}()
-		}
-	}()
-
-	return NewRootHandler(actService)
-}
-
-const int64Len = 19
-
-func truncateToStellarPrecision(number *big.Int) int {
-	str := number.String()
-	length := len(str)
-
-	sliceLen := int(math.Min(int64Len, float64(length)))
-	slice := str[:sliceLen]
-
-	amount, _ := strconv.Atoi(slice)
-
-	return amount
-}
+					}*/

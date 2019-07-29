@@ -3,9 +3,16 @@ package test
 import (
 	"context"
 	"fmt"
+	"net/http/httptest"
+	"os"
+	"regexp"
+	"testing"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/sdk"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal"
+
 	hdwallet "github.com/drdgvhbh/go-ethereum-hdwallet"
-	"github.com/drdgvhbh/stellar-fi-anchor/authorization/internal"
-	"github.com/drdgvhbh/stellar-fi-anchor/authorization/sdk"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
@@ -14,10 +21,6 @@ import (
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/xdr"
 	"github.com/stretchr/testify/suite"
-	"net/http/httptest"
-	"os"
-	"regexp"
-	"testing"
 )
 
 type DepositEthereumSuite struct {

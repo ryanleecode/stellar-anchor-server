@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"time"
 
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/joho/godotenv/autoload"
@@ -82,6 +83,11 @@ func main() {
 		_ = bootstrapParams.DB().Close()
 		bootstrapParams.RPCClient().Close()
 	}()
+
+	log.SetLevel(log.TraceLevel)
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
 
 	rootHandler := internal.Bootstrap(bootstrapParams)
 

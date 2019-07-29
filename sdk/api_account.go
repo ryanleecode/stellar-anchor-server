@@ -27,7 +27,7 @@ type AccountApiService service
 /*
 AccountApiService Get Account Deposit Details
 Gets the details for depositing currency into an account
- * @param ctx context.Context - for ethereum, logging, cancellation, deadlines, tracing, etc. Passed from middleware.Request or context.Background().
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param account
  * @param assetCode
 @return AccountDepositDetails
@@ -43,7 +43,7 @@ func (a *AccountApiService) Deposit(ctx context.Context, account string, assetCo
 	)
 
 	// create path and map variables
-	localVarPath := BasePath + "/v1/deposit"
+	localVarPath := a.client.cfg.BasePath + "/v1/deposit"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -68,12 +68,12 @@ func (a *AccountApiService) Deposit(ctx context.Context, account string, assetCo
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	r, err := prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHttpResponse, err := callAPI(r)
+	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
 		return localVarReturnValue, localVarHttpResponse, err
 	}
@@ -91,18 +91,18 @@ func (a *AccountApiService) Deposit(ctx context.Context, account string, assetCo
 		}
 		if localVarHttpResponse.StatusCode == 200 {
 			var v AccountDepositDetails
-			err = decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
-				error = err.Error()
+				newErr.error = err.Error()
 				return localVarReturnValue, localVarHttpResponse, newErr
 			}
-			model = v
+			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	err = decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 	if err != nil {
 		newErr := GenericOpenAPIError{
 			body:  localVarBody,

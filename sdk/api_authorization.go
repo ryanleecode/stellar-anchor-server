@@ -27,7 +27,7 @@ type AuthorizationApiService service
 /*
 AuthorizationApiService Authenticate A Challenge
 Authenticates the user with a signed JWT token
- * @param ctx context.Context - for ethereum, logging, cancellation, deadlines, tracing, etc. Passed from middleware.Request or context.Background().
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param account
  * @param challengeTransaction
 @return AuthToken
@@ -43,7 +43,7 @@ func (a *AuthorizationApiService) Authenticate(ctx context.Context, account stri
 	)
 
 	// create path and map variables
-	localVarPath := BasePath + "/v1/authorizations"
+	localVarPath := a.client.cfg.BasePath + "/v1/authorizations"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -69,12 +69,12 @@ func (a *AuthorizationApiService) Authenticate(ctx context.Context, account stri
 	}
 	// body params
 	localVarPostBody = &challengeTransaction
-	r, err := prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHttpResponse, err := callAPI(r)
+	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
 		return localVarReturnValue, localVarHttpResponse, err
 	}
@@ -92,18 +92,18 @@ func (a *AuthorizationApiService) Authenticate(ctx context.Context, account stri
 		}
 		if localVarHttpResponse.StatusCode == 200 {
 			var v AuthToken
-			err = decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
-				error = err.Error()
+				newErr.error = err.Error()
 				return localVarReturnValue, localVarHttpResponse, newErr
 			}
-			model = v
+			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	err = decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 	if err != nil {
 		newErr := GenericOpenAPIError{
 			body:  localVarBody,
@@ -118,7 +118,7 @@ func (a *AuthorizationApiService) Authenticate(ctx context.Context, account stri
 /*
 AuthorizationApiService Request A Challenge
 Requests a challenge transaction for the client to sign. Once signed, the challenge transaction is to be resubmitted back to the api.
- * @param ctx context.Context - for ethereum, logging, cancellation, deadlines, tracing, etc. Passed from middleware.Request or context.Background().
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param account
 @return ChallengeTransaction
 */
@@ -133,7 +133,7 @@ func (a *AuthorizationApiService) RequestAChallenge(ctx context.Context, account
 	)
 
 	// create path and map variables
-	localVarPath := BasePath + "/v1/authorizations"
+	localVarPath := a.client.cfg.BasePath + "/v1/authorizations"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -157,12 +157,12 @@ func (a *AuthorizationApiService) RequestAChallenge(ctx context.Context, account
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	r, err := prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHttpResponse, err := callAPI(r)
+	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
 		return localVarReturnValue, localVarHttpResponse, err
 	}
@@ -180,18 +180,18 @@ func (a *AuthorizationApiService) RequestAChallenge(ctx context.Context, account
 		}
 		if localVarHttpResponse.StatusCode == 200 {
 			var v ChallengeTransaction
-			err = decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
-				error = err.Error()
+				newErr.error = err.Error()
 				return localVarReturnValue, localVarHttpResponse, newErr
 			}
-			model = v
+			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	err = decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 	if err != nil {
 		newErr := GenericOpenAPIError{
 			body:  localVarBody,

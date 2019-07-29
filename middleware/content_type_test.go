@@ -1,9 +1,11 @@
-package middleware
+package middleware_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	middleware "github.com/drdgvhbh/stellar-fi-anchor/middlewareo"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,7 +26,7 @@ func TestContentTypeMiddleware_ServeHTTP_CallsNextServeHttp(t *testing.T) {
 	r := &http.Request{}
 	h.On("ServeHTTP", w, r).Return()
 
-	m := NewContentTypeMiddleware(h, "")
+	m := middleware.NewContentTypeMiddleware(h, "")
 
 	m.ServeHTTP(w, r)
 
@@ -38,7 +40,7 @@ func TestNewApplicationJSONMiddleware(t *testing.T) {
 	r := &http.Request{}
 	h.On("ServeHTTP", w, r).Return()
 
-	m := NewApplicationJSONMiddleware(h)
+	m := middleware.NewApplicationJSONMiddleware(h)
 
 	m.ServeHTTP(w, r)
 
@@ -52,7 +54,7 @@ func TestNewTextXMLMiddleware(t *testing.T) {
 	r := &http.Request{}
 	h.On("ServeHTTP", w, r).Return()
 
-	m := NewTextXMLMiddleware(h)
+	m := middleware.NewTextXMLMiddleware(h)
 
 	m.ServeHTTP(w, r)
 
@@ -67,7 +69,7 @@ func TestNewContentTypeMiddleware(t *testing.T) {
 	h.On("ServeHTTP", w, r).Return()
 
 	cType := "application/test"
-	m := NewContentTypeMiddleware(h, cType)
+	m := middleware.NewContentTypeMiddleware(h, cType)
 
 	m.ServeHTTP(w, r)
 

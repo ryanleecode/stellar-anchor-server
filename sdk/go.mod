@@ -1,5 +1,6 @@
-module github.com/drdgvhbh/StellarAnchor/sdk
+module github.com/drdgvhbh/stellar-fi-anchor/sdk
 
-go 1.12
-
-require golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+require (
+	github.com/antihax/optional v0.0.0-20180406194304-ca021399b1a6 // indirect
+	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
+)

@@ -129,4 +129,4 @@ components:
     bearerAuth:
       bearerFormat: JWT
       scheme: bearer
-      type: middleware
+      type: http

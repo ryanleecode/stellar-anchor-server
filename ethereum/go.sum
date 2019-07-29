@@ -36,6 +36,7 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZm
 github.com/drdgvhbh/go-ethereum-hdwallet v0.0.0-20190717030924-e5b49683f92e h1:EPm67vZ4wDhqzL2dqvabRQ5+j/DEMbZvT6jAURWYKYs=
 github.com/drdgvhbh/go-ethereum-hdwallet v0.0.0-20190717030924-e5b49683f92e/go.mod h1:N+TfnG0FMfcn5o2V5uv2MONzP3N5UvZK2tG5Tu5afEY=
 github.com/drdgvhbh/stellar-fi-anchor v0.0.0-20190720024809-8522195fde21 h1:NPhx4PyjvYGvya0nX+V++nSnDChdAsh9utGvI7tMc8A=
+github.com/drdgvhbh/stellar-fi-anchor v0.0.0-20190720024809-8522195fde21/go.mod h1:jEqeJ8sMKiNZP2wqlhSAjMJtyFVQK6R1IVmCTAX9iI0=
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
@@ -116,6 +117,8 @@ github.com/prometheus/common v0.2.0/go.mod h1:TNfzLD0ON7rHzMJeJkieUDPYmFC7Snx/y8
 github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
+github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
+github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
 github.com/rs/cors v1.6.0 h1:G9tHG9lebljV9mfp9SNPDL36nCDxmo3zTlAf1YgvzmI=
 github.com/rs/cors v1.6.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
 github.com/segmentio/go-loggly v0.5.0 h1:mnK6cIo6ajLsaaa1uqEi5IPsMlJYu+F0HpIoLjwIBFY=
