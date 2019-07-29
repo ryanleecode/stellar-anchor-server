@@ -1,4 +1,4 @@
-module github.com/drdgvhbh/stellar-fi-anchor/middlewareo
+module github.com/drdgvhbh/stellar-fi-anchor/middleware
 
 go 1.12
 

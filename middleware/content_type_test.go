@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	middleware "github.com/drdgvhbh/stellar-fi-anchor/middlewareo"
+	"github.com/drdgvhbh/stellar-fi-anchor/middleware"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
