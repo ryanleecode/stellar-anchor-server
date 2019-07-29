@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/stellar/go/network"
+
 	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
@@ -54,7 +56,7 @@ func main() {
 		ipcClient.Close()
 	}()
 
-	rootHandler := internal.Bootstrap(env.NetworkPassphrase(), env.Mnemonic(), db, ipcClient, logger)
+	rootHandler := internal.Bootstrap(network.TestNetworkPassphrase, env.Mnemonic(), db, ipcClient, logger)
 
 	server := &http.Server{
 		Handler:      rootHandler,

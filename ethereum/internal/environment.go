@@ -1,22 +1,22 @@
 package internal
 
 import (
-	"github.com/go-errors/errors"
 	"os"
 	"strconv"
+
+	"github.com/go-errors/errors"
 )
 
 type Environment struct {
-	port              string
-	mnemonic          string
-	dbHost            string
-	dbPort            string
-	dbUser            string
-	dbName            string
-	dbPassword        string
-	dbSSLMode         string
-	ethIPCEndpoint    string
-	networkPassphrase string
+	port           string
+	mnemonic       string
+	dbHost         string
+	dbPort         string
+	dbUser         string
+	dbName         string
+	dbPassword     string
+	dbSSLMode      string
+	ethIPCEndpoint string
 }
 
 func (e *Environment) Port() string {
@@ -55,22 +55,17 @@ func (e *Environment) EthIPCEndpoint() string {
 	return e.ethIPCEndpoint
 }
 
-func (e *Environment) NetworkPassphrase() string {
-	return e.networkPassphrase
-}
-
 func NewEnvironment() *Environment {
 	return &Environment{
-		port:              os.Getenv("PORT"),
-		mnemonic:          os.Getenv("MNEMONIC"),
-		dbHost:            os.Getenv("DB_HOST"),
-		dbPort:            os.Getenv("DB_PORT"),
-		dbUser:            os.Getenv("DB_USER"),
-		dbName:            os.Getenv("DB_NAME"),
-		dbPassword:        os.Getenv("DB_PASSWORD"),
-		dbSSLMode:         os.Getenv("DB_SSL_MODE"),
-		networkPassphrase: os.Getenv("NETWORK_PASSPHRASE"),
-		ethIPCEndpoint:    os.Getenv("ETH_IPC_ENDPOINT"),
+		port:           os.Getenv("PORT"),
+		mnemonic:       os.Getenv("MNEMONIC"),
+		dbHost:         os.Getenv("DB_HOST"),
+		dbPort:         os.Getenv("DB_PORT"),
+		dbUser:         os.Getenv("DB_USER"),
+		dbName:         os.Getenv("DB_NAME"),
+		dbPassword:     os.Getenv("DB_PASSWORD"),
+		dbSSLMode:      os.Getenv("DB_SSL_MODE"),
+		ethIPCEndpoint: os.Getenv("ETH_IPC_ENDPOINT"),
 	}
 }
 
@@ -96,9 +91,6 @@ func (e *Environment) Validate() []error {
 	}
 	if e.dbSSLMode != "disable" && e.dbSSLMode != "enable" {
 		errs = append(errs, errors.New("DB_SSL_MODE must be disable or enable"))
-	}
-	if e.networkPassphrase == "" {
-		errs = append(errs, errors.New("NETWORK_PASSPHRASE is missing"))
 	}
 	if e.ethIPCEndpoint == "" {
 		errs = append(errs, errors.New("ETH_IPC_ENDPOINT is missing"))
