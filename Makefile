@@ -2,7 +2,11 @@ start:
 	go run ./cmd/main.go
 
 test-unit:
-	go test ./internal/...
+	cd api-gateway && make test-unit
+	cd authentication && make test-unit
+	cd ethereum && make test-unit
+	cd middleware && make test-unit
+	cd static && make test-unit
 
 cover:
 	go test ./internal/... -coverprofile=coverage.out
