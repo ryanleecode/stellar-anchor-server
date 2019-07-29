@@ -26,6 +26,7 @@ require (
 	github.com/stellar/go-xdr v0.0.0-20180917104419-0bc96f33a18e // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/thedevsaddam/govalidator v1.9.8
+	github.com/thoas/go-funk v0.4.0
 	github.com/tyler-smith/go-bip39 v1.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 )

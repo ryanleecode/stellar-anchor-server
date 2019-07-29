@@ -1,6 +1,10 @@
-package internal
+package internal_test
 
 import (
+	"testing"
+	"time"
+
+	"github.com/drdgvhbh/stellar-fi-anchor/authentication/internal"
 	"github.com/drdgvhbh/stellar-fi-anchor/authentication/mock"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
@@ -8,15 +12,14 @@ import (
 	"github.com/stellar/go/txnbuild"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
-	"time"
+	funk "github.com/thoas/go-funk"
 )
 
 type ServiceSuite struct {
 	suite.Suite
 	buildChallengeTransactionMock *mock.BuildChallengeTransactionMock
 	anchorKeyPair                 *keypair.Full
-	authService                   *Service
+	authService                   *internal.Service
 	passphrase                    string
 }
 
@@ -29,7 +32,7 @@ func (s *ServiceSuite) SetupTest() {
 	s.anchorKeyPair = anchorKeyPair
 	s.passphrase = network.TestNetworkPassphrase
 
-	s.authService = NewService(
+	s.authService = internal.NewService(
 		s.buildChallengeTransactionMock,
 		s.anchorKeyPair,
 		s.passphrase)
@@ -81,8 +84,9 @@ func (s *ServiceSuite) TestValidationIsSuccessful() {
 	assert.NoError(s.T(), err)
 
 	txe := tx.TxEnvelope()
-	validationErrs := ValidateClientSignedChallengeTransaction(txe)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txe)
 	assert.Empty(s.T(), validationErrs)
+	assert.NoError(s.T(), err)
 }
 
 func (s *ServiceSuite) TestValidationFailsWhenSourceAccountDoesntMatchPublicKey() {
@@ -101,11 +105,12 @@ func (s *ServiceSuite) TestValidationFailsWhenSourceAccountDoesntMatchPublicKey(
 
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionSourceAccountDoesntMatchAnchorPublicKey:
+		case *internal.TransactionSourceAccountDoesntMatchAnchorPublicKey:
 			return true
 		default:
 			return false
@@ -122,11 +127,12 @@ func (s *ServiceSuite) TestValidationFailsWhenTimeboundsIsNil() {
 	txEnv := tx.TxEnvelope()
 	txEnv.Tx.TimeBounds = nil
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionIsMissingTimeBounds:
+		case *internal.TransactionIsMissingTimeBounds:
 			return true
 		default:
 			return false
@@ -146,11 +152,12 @@ func (s *ServiceSuite) TestValidationFailsWhenNowIsAfterTimeboundsMaxTime() {
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionChallengeExpired:
+		case *internal.TransactionChallengeExpired:
 			return true
 		default:
 			return false
@@ -170,11 +177,12 @@ func (s *ServiceSuite) TestValidationFailsWhenNowIsBeforeTimeboundsMinTime() {
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionChallengeExpired:
+		case *internal.TransactionChallengeExpired:
 			return true
 		default:
 			return false
@@ -194,11 +202,12 @@ func (s *ServiceSuite) TestValidationFailsIfThereIsNotOnlyOneOperation() {
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionChallengeDoesNotHaveOnlyOneOperation:
+		case *internal.TransactionChallengeDoesNotHaveOnlyOneOperation:
 			return true
 		default:
 			return false
@@ -218,11 +227,12 @@ func (s *ServiceSuite) TestValidationFailsIfOperationIsNotAManageDataOperation()
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionChallengeIsNotAManageDataOperation:
+		case *internal.TransactionChallengeIsNotAManageDataOperation:
 			return true
 		default:
 			return false
@@ -239,11 +249,12 @@ func (s *ServiceSuite) TestValidationFailsIfOperationSourceAccountIsNil() {
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionOperationsIsNil:
+		case *internal.TransactionOperationsIsNil:
 			return true
 		default:
 			return false
@@ -264,11 +275,12 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByAnchor() {
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionIsNotSignedByAnchor:
+		case *internal.TransactionIsNotSignedByAnchor:
 			return true
 		default:
 			return false
@@ -290,11 +302,12 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsSignedByAnchorButWithTh
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionIsNotSignedByAnchor:
+		case *internal.TransactionIsNotSignedByAnchor:
 			return true
 		default:
 			return false
@@ -324,11 +337,12 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsNotSignedByClient() {
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionIsNotSignedByClient:
+		case *internal.TransactionIsNotSignedByClient:
 			return true
 		default:
 			return false
@@ -359,11 +373,12 @@ func (s *ServiceSuite) TestValidationFailsIfTransactionIsByClientButWithTheWrong
 	assert.NoError(s.T(), err)
 	txEnv := tx.TxEnvelope()
 
-	validationErrs := ValidateClientSignedChallengeTransaction(txEnv)
+	validationErrs, err := s.authService.ValidateClientSignedChallengeTransaction(txEnv)
+	assert.NoError(s.T(), err)
 	filteredErrs := funk.Filter(validationErrs, func(x error) bool {
 		origErr := errors.Cause(x)
 		switch origErr.(type) {
-		case *authentication.TransactionIsNotSignedByClient:
+		case *internal.TransactionIsNotSignedByClient:
 			return true
 		default:
 			return false
