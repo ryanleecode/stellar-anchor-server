@@ -56,5 +56,3 @@ RUN cd sdk && go mod download
 RUN cd static && go mod download
 
 COPY . .
-
-RUN make test-unit
