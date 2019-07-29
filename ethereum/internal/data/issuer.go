@@ -61,7 +61,7 @@ func (i *Issuer) IssueWithMemo(destStellarAddr string, amount int64, memo txnbui
 	availableTrust, err := i.AvailableTrust(i.asset, destinationAct)
 	if availableTrust < float64(amount)/params.Ether {
 		return "", fmt.Errorf(
-			"recipient must have %f trust for the asset issued by %s but instead has %d",
+			"recipient must have %f trust for the asset issued by %s but instead has %f",
 			float64(amount)/params.Ether, issuer, availableTrust)
 	}
 
