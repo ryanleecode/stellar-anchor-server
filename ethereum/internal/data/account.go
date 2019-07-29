@@ -50,7 +50,7 @@ type AccountStorage struct {
 }
 
 func NewAccountStorage(w EthereumWallet) *AccountStorage {
-	return &AccountStorage{conf: AccountStorageConf{AccountsTableName: "accounts"}, wallet: w}
+	return NewAccountStorageWithConf(w, AccountStorageConf{AccountsTableName: "accounts"})
 }
 
 func NewAccountStorageWithConf(w EthereumWallet, conf AccountStorageConf) *AccountStorage {
