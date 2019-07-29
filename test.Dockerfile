@@ -32,13 +32,23 @@ COPY ethereum/go.sum go.sum
 
 FROM golang:1.12 as app
 WORKDIR /app
-COPY --from=ethereum /app/ethereum /app/ethereum
-COPY --from=api-gateway /app/api-gateway /app/api-gateway
-COPY --from=authentication /app/authentication /app/authentication
-COPY --from=middleware /app/middleware /app/middleware
-COPY --from=sdk /app/sdk /app/sdk
-COPY --from=static /app/static /app/static
 
+COPY --from=api-gateway /app/api-gateway /app/api-gateway
+RUN cd api-gateway && go mod download
+
+COPY --from=authentication /app/authentication /app/authentication
+RUN cd authentication && go mod download
+
+COPY --from=middleware /app/middleware /app/middleware
+RUN cd middleware && go mod download
+
+COPY --from=sdk /app/sdk /app/sdk
+RUN cd sdk && go mod download
+
+COPY --from=static /app/static /app/static
+RUN cd static && go mod download
+
+COPY --from=ethereum /app/ethereum /app/ethereum
 RUN cd ethereum && go mod download
 RUN cd api-gateway && go mod download
 RUN cd authentication && go mod download
