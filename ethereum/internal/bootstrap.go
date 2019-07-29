@@ -72,10 +72,14 @@ func Bootstrap(params BootstrapParams) http.Handler {
 	ledger := data.NewLedger()
 	acctStorage := data.NewAccountStorage(wallet)
 	gateway := data.NewLogicGateway(ledger, ethBlockchain, acctStorage, db)
+	logger := log.New()
+	logger.SetLevel(log.TraceLevel)
+	logger.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+	acctService := logic.NewAccountService(data.NewLogicGatewayTracer(logger, gateway), issuer)
 
-	acctService := logic.NewAccountService(gateway, issuer)
-
-	blockService := logic.NewBlockService(gateway,
+	blockService := logic.NewBlockService(data.NewLogicGatewayTracer(logger, gateway),
 		func(tx logic.EthereumTransaction) (bool, error) {
 			act, err := acctService.FindAccountFrom(tx.To())
 			if err != nil {
@@ -83,7 +87,8 @@ func Bootstrap(params BootstrapParams) http.Handler {
 			}
 			return act != nil, err
 		})
-	transactionService := logic.NewTransactionService(acctService, stellar.FormatToAssetPrecision, gateway)
+	transactionService := logic.NewTransactionService(
+		acctService, stellar.FormatToAssetPrecision, data.NewLogicGatewayTracer(logger, gateway))
 
 	c := cron.New()
 	if err := c.AddFunc("@every 10s", func() {
@@ -95,7 +100,7 @@ func Bootstrap(params BootstrapParams) http.Handler {
 
 			l := gateway.Begin()
 
-			didProcess, err := blockService.ProcessNextBlock(ctx, l)
+			didProcess, err := blockService.ProcessNextBlock(ctx, data.NewLogicGatewayTracer(logger, l))
 			if err != nil {
 				l.Rollback()
 				log.WithError(err).Error("failed to process next block")
@@ -119,7 +124,7 @@ func Bootstrap(params BootstrapParams) http.Handler {
 
 			l := gateway.Begin()
 
-			err := transactionService.ProcessDeposit(ctx, l)
+			err := transactionService.ProcessDeposit(ctx, data.NewLogicGatewayTracer(logger, l))
 			if err != nil {
 				l.Rollback()
 				log.WithError(err).Error("failed to process next deposit transaction")

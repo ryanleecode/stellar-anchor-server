@@ -44,6 +44,17 @@ func (t EthereumTransaction) BlockNumber() uint64 {
 	return t.blockNumber
 }
 
+func (t EthereumTransaction) Fields() map[string]interface{} {
+	gwei := t.Gwei()
+	return map[string]interface{}{
+		"hash":         t.Hash().Hex(),
+		"to":           t.To(),
+		"block_number": t.BlockNumber(),
+		"gwei":         gwei.String(),
+		"from":         t.From(),
+	}
+}
+
 func NewEthereumTransaction(
 	From string,
 	To string,
