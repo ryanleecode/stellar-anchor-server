@@ -108,6 +108,7 @@ func (g LogicGateway) Complete(tx *logic.EthereumTransaction, stellarTXHash stri
 func (g LogicGateway) FindByStellar(addr string) (*logic.DepositAccount, error) {
 	return g.accountStorage.FindByStellar(addr, g.db)
 }
+
 func (g LogicGateway) FindByEth(addr string) (*logic.DepositAccount, error) {
 	return g.accountStorage.FindByEth(addr, g.db)
 }
