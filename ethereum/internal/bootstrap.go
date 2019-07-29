@@ -150,20 +150,3 @@ func Bootstrap(params BootstrapParams) http.Handler {
 
 	return NewRootHandler(acctService)
 }
-
-/*					txHash := tx.Hash().Hex()
-					gwei := tx.Value()
-					depositAmount := int64(truncateToStellarPrecision(gwei))
-					err := issuer.IssueWithMemo(
-						account.StellarAccountID(), depositAmount, txnbuild.MemoText(txHash))
-					if err != nil {
-						errCause := errors.Cause(err)
-						switch errCause.(type) {
-						case *horizonclient.Error:
-							log.Println(errCause.(*horizonclient.Error).Problem)
-							return
-						default:
-							log.Println(err.Error())
-							return
-						}
-					}*/
