@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http/httptest"
-	"os"
 	"regexp"
 	"testing"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/stellar/go/network"
 
 	"github.com/drdgvhbh/stellar-fi-anchor/sdk"
 
@@ -16,46 +19,56 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"
-	"github.com/stellar/go/xdr"
 	"github.com/stretchr/testify/suite"
 )
 
 type DepositEthereumSuite struct {
 	suite.Suite
-	serverKP  *keypair.Full
 	clientKP  *keypair.Full
 	server    *httptest.Server
 	db        *gorm.DB
+	rpcClient *rpc.Client
 	apiClient *sdk.APIClient
 }
 
 func (s *DepositEthereumSuite) SetupSuite() {
 	err := godotenv.Load("../.env")
 	s.NoError(err)
-	serverKP, err := keypair.Random()
+
+	env := NewEnvironment()
+	db, err := gorm.Open(
+		"postgres", fmt.Sprintf(
+			"host=%s port=%s user=%s dbname=%s sslmode=%s password=%s",
+			env.DBHost(),
+			env.DBPort(),
+			env.DBUser(),
+			env.DBName(),
+			env.DBSSLMode(),
+			env.DBPassword()))
+	s.NoError(err)
+	s.db = db
+
+	rpcClient, err := rpc.DialHTTP(env.ethRPCEndpoint)
+	s.NoError(err)
+	s.rpcClient = rpcClient
+
+	issuerKP, err := keypair.Random()
 	s.NoError(err)
 	client := horizonclient.DefaultTestNetClient
-	_, err = client.Fund(serverKP.Address())
+	_, err = client.Fund(issuerKP.Address())
 	s.NoError(err)
-	s.serverKP = serverKP
 }
 
 func (s *DepositEthereumSuite) SetupTest() {
 	mnemonic, err := hdwallet.NewMnemonic(128)
 	s.NoError(err)
-	serverPK := s.serverKP.Seed()
-	db, err := gorm.Open(
-		"postgres", "host=localhost port=6666 user=postgres dbname=postgres sslmode=disable")
-	s.NoError(err)
 
-	rpcClient, err := rpc.DialHTTP(os.Getenv("INFURA_URL"))
-	s.NoError(err)
-	rootHandler := internal.Bootstrap(serverPK, mnemonic, db, rpcClient)
+	logger := logrus.New()
+
+	rootHandler := internal.Bootstrap(network.TestNetworkPassphrase, mnemonic, s.db, s.rpcClient, logger)
 	s.server = httptest.NewServer(rootHandler)
-	s.db = db
 
 	clientKP, err := keypair.Random()
 	s.NoError(err)
@@ -65,34 +78,14 @@ func (s *DepositEthereumSuite) SetupTest() {
 		BasePath: fmt.Sprintf("%s/api", s.server.URL),
 	})
 	s.apiClient = apiClient
+
 }
 
 func (s *DepositEthereumSuite) TestDepositRouteWorks() {
 	ctx := context.Background()
 	account := s.clientKP.Address()
-	tx, _, err := s.apiClient.AuthorizationApi.RequestAChallenge(ctx, account)
-	s.NoError(err)
 
-	var txe xdr.TransactionEnvelope
-	err = xdr.SafeUnmarshalBase64(tx.Transaction, &txe)
-	s.NoError(err)
-
-	b := &build.TransactionEnvelopeBuilder{E: &txe}
-	b.Init()
-	err = b.MutateTX(build.TestNetwork)
-	s.NoError(err)
-	err = b.Mutate(build.Sign{Seed: s.clientKP.Seed()})
-	s.NoError(err)
-
-	signedTxe, err := b.Base64()
-
-	authToken, _, err := s.apiClient.
-		AuthorizationApi.
-		Authenticate(ctx, account, sdk.ChallengeTransaction{Transaction: signedTxe})
-	s.NoError(err)
-
-	authCtx := context.WithValue(ctx, sdk.ContextAccessToken, authToken.Token)
-	d, _, err := s.apiClient.AccountApi.Deposit(authCtx, account, "ETH")
+	d, _, err := s.apiClient.AccountApi.Deposit(ctx, account, "ETH")
 	s.NoError(err)
 
 	s.Regexp(regexp.MustCompile("^0x[a-fA-F0-9]{40}$"), d.How)
@@ -101,34 +94,13 @@ func (s *DepositEthereumSuite) TestDepositRouteWorks() {
 func (s *DepositEthereumSuite) TestMultipleDepositCallsForSameAssetShouldReturnSameAddress() {
 	ctx := context.Background()
 	account := s.clientKP.Address()
-	tx, _, err := s.apiClient.AuthorizationApi.RequestAChallenge(ctx, account)
-	s.NoError(err)
 
-	var txe xdr.TransactionEnvelope
-	err = xdr.SafeUnmarshalBase64(tx.Transaction, &txe)
-	s.NoError(err)
-
-	b := &build.TransactionEnvelopeBuilder{E: &txe}
-	b.Init()
-	err = b.MutateTX(build.TestNetwork)
-	s.NoError(err)
-	err = b.Mutate(build.Sign{Seed: s.clientKP.Seed()})
-	s.NoError(err)
-
-	signedTxe, err := b.Base64()
-
-	authToken, _, err := s.apiClient.
-		AuthorizationApi.
-		Authenticate(ctx, account, sdk.ChallengeTransaction{Transaction: signedTxe})
-	s.NoError(err)
-
-	authCtx := context.WithValue(ctx, sdk.ContextAccessToken, authToken.Token)
-	d, _, err := s.apiClient.AccountApi.Deposit(authCtx, account, "ETH")
+	d, _, err := s.apiClient.AccountApi.Deposit(ctx, account, "ETH")
 	s.NoError(err)
 
 	firstAddress := d.How
 
-	d, _, err = s.apiClient.AccountApi.Deposit(authCtx, account, "ETH")
+	d, _, err = s.apiClient.AccountApi.Deposit(ctx, account, "ETH")
 	s.NoError(err)
 
 	secondAddress := d.How
@@ -138,8 +110,6 @@ func (s *DepositEthereumSuite) TestMultipleDepositCallsForSameAssetShouldReturnS
 
 func (s *DepositEthereumSuite) AfterTest(_, _ string) {
 	s.server.Close()
-	err := s.db.Close()
-	s.NoError(err)
 }
 
 func TestDepositEthereumSuite(t *testing.T) {
