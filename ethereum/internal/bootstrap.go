@@ -36,10 +36,10 @@ type BootstrapParams interface {
 	RPCClient() *rpc.Client
 }
 
-func Bootstrap(params BootstrapParams) http.Handler {
+func Bootstrap(params BootstrapParams, logger *log.Logger) http.Handler {
 	w, err := hdwallet.NewFromMnemonic(params.Mnemonic())
 	if err != nil {
-		log.Fatalln(errors.Wrap(err, "cannot create hd wallet").Error())
+		logger.Fatalln(errors.Wrap(err, "cannot create hd wallet").Error())
 	}
 	wallet := ethwallet.NewWallet(w)
 
@@ -47,16 +47,16 @@ func Bootstrap(params BootstrapParams) http.Handler {
 	path := hdwallet.MustParseDerivationPath(fmt.Sprintf("m/44'/60'/0'/%d", 1))
 	pk, err := wallet.PrivateKeyBytes(path)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 	var pk32 [32]byte
 	copy(pk32[:], pk)
 	issuingKP, err := keypair.FromRawSeed(pk32)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 
-	log.Println(issuingKP.Address(), issuingKP.Seed())
+	logger.Println(issuingKP.Address(), issuingKP.Seed())
 
 	issuer := data.NewIssuer(
 		issuingKP,
@@ -72,11 +72,6 @@ func Bootstrap(params BootstrapParams) http.Handler {
 	ledger := data.NewLedger()
 	acctStorage := data.NewAccountStorage(wallet)
 	gateway := data.NewLogicGateway(ledger, ethBlockchain, acctStorage, db)
-	logger := log.New()
-	logger.SetLevel(log.TraceLevel)
-	logger.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
 	acctService := logic.NewAccountService(data.NewLogicGatewayTracer(logger, gateway), issuer)
 
 	blockService := logic.NewBlockService(data.NewLogicGatewayTracer(logger, gateway),
@@ -103,7 +98,7 @@ func Bootstrap(params BootstrapParams) http.Handler {
 			didProcess, err := blockService.ProcessNextBlock(ctx, data.NewLogicGatewayTracer(logger, l))
 			if err != nil {
 				l.Rollback()
-				log.WithError(err).Error("failed to process next block")
+				logger.WithError(err).Error("failed to process next block")
 				break
 			}
 			if !didProcess {
@@ -113,7 +108,7 @@ func Bootstrap(params BootstrapParams) http.Handler {
 			l.Commit()
 		}
 	}); err != nil {
-		log.Fatalln(errors.Wrapf(err, "failed to add process blocks cron job"))
+		logger.Fatalln(errors.Wrapf(err, "failed to add process blocks cron job"))
 	}
 	if err := c.AddFunc("@every 5s", func() {
 		ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*4900)
@@ -127,13 +122,13 @@ func Bootstrap(params BootstrapParams) http.Handler {
 			err := transactionService.ProcessDeposit(ctx, data.NewLogicGatewayTracer(logger, l))
 			if err != nil {
 				l.Rollback()
-				log.WithError(err).Error("failed to process next deposit transaction")
+				logger.WithError(err).Error("failed to process next deposit transaction")
 
 				errCause := errors.Cause(err)
 				switch errCause.(type) {
 				case *horizonclient.Error:
 					horizonErr := errCause.(*horizonclient.Error)
-					log.WithError(errCause).WithFields(log.Fields{
+					logger.WithError(errCause).WithFields(log.Fields{
 						"title":  horizonErr.Problem.Title,
 						"type":   horizonErr.Problem.Type,
 						"detail": horizonErr.Problem.Detail,
@@ -149,7 +144,7 @@ func Bootstrap(params BootstrapParams) http.Handler {
 			l.Commit()
 		}
 	}); err != nil {
-		log.Fatalln(errors.Wrapf(err, "failed to add process transactions cron job"))
+		logger.Fatalln(errors.Wrapf(err, "failed to add process transactions cron job"))
 	}
 	c.Start()
 

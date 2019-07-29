@@ -65,6 +65,12 @@ func (p *BootstrapParams) RPCClient() *rpc.Client {
 }
 
 func main() {
+	logger := log.New()
+	logger.SetLevel(log.TraceLevel)
+	logger.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+
 	environment := internal.NewEnvironment()
 	envErrors := environment.Validate()
 	if len(envErrors) > 0 {
@@ -73,23 +79,18 @@ func main() {
 			err = errors.Wrapf(err, e.Error())
 		}
 
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 	bootstrapParams, err := NewBootstrapParams(*environment)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 	defer func() {
 		_ = bootstrapParams.DB().Close()
 		bootstrapParams.RPCClient().Close()
 	}()
 
-	log.SetLevel(log.TraceLevel)
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-
-	rootHandler := internal.Bootstrap(bootstrapParams)
+	rootHandler := internal.Bootstrap(bootstrapParams, logger)
 
 	server := &http.Server{
 		Handler:      rootHandler,
@@ -98,6 +99,6 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Printf("Server is listening on port %s", environment.Port())
-	log.Fatal(server.ListenAndServe())
+	logger.Printf("Server is listening on port %s", environment.Port())
+	logger.Fatal(server.ListenAndServe())
 }
