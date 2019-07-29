@@ -3,8 +3,6 @@ package logic
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/pkg/errors"
 )
 
@@ -58,8 +56,6 @@ func (s BlockService) ProcessNextBlock(ctx context.Context, ledger AnchorLedger)
 		return false, errors.Wrap(err, "retrieve last processed block failed")
 	}
 
-	log.Tracef("the last processed block was %d", b.Number())
-
 	headBNum, err := s.blockchain.HeadBlockNumber(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "retrieve head block number failed")
@@ -67,11 +63,8 @@ func (s BlockService) ProcessNextBlock(ctx context.Context, ledger AnchorLedger)
 	nxtB := NewBlock(b.number + 1)
 	headB := NewBlock(headBNum)
 	if !nxtB.IsBehind(*headB) {
-		log.Tracef("block %d is not behind head block %d. no blocks processed", b.Number(), headB.Number())
 		return false, nil
 	}
-
-	log.Tracef("now processing block %d", nxtB.Number())
 
 	err = ledger.AddBlock(*nxtB)
 	if err != nil {
@@ -83,8 +76,6 @@ func (s BlockService) ProcessNextBlock(ctx context.Context, ledger AnchorLedger)
 			"retrieve transaction for block %d failed", nxtB.number)
 	}
 
-	log.Tracef("block %d has %d transactions", nxtB.Number(), len(txs))
-
 	for _, tx := range txs {
 		shouldAdd, err := s.canAddToLedger(tx)
 		if err != nil {
@@ -93,7 +84,6 @@ func (s BlockService) ProcessNextBlock(ctx context.Context, ledger AnchorLedger)
 				tx.hash, nxtB.Number())
 		}
 		if !shouldAdd {
-			log.Tracef("tx %s cannot be added to our ledger", tx.Hash().Hex())
 			continue
 		}
 
