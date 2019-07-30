@@ -34,7 +34,7 @@ type DepositEthereumSuite struct {
 }
 
 func (s *DepositEthereumSuite) SetupSuite() {
-	err := godotenv.Load("../.env")
+	err := godotenv.Load("../.env.test")
 	s.NoError(err)
 
 	env := NewEnvironment()
