@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/ethwallet"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/ethwallet"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/stellar"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/stellar"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/logic"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/logic"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/data"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/data"
 
 	log "github.com/sirupsen/logrus"
 

@@ -1,4 +1,4 @@
-module github.com/drdgvhbh/stellar-fi-anchor/api-gateway
+module github.com/drdgvhbh/stellar-anchor-server/api-gateway
 
 go 1.12
 

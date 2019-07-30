@@ -8,11 +8,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/data"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/data"
 
-	mocks "github.com/drdgvhbh/stellar-fi-anchor/ethereum/mock"
+	mocks "github.com/drdgvhbh/stellar-anchor-server/ethereum/mock"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/logic"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/logic"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/stretchr/testify/suite"

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/drdgvhbh/stellar-fi-anchor/api-gateway/internal"
+	"github.com/drdgvhbh/stellar-anchor-server/api-gateway/internal"
 	"github.com/pkg/errors"
 	"log"
 	"net/http"

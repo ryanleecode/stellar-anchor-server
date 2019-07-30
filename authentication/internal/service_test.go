@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/authentication/internal"
-	"github.com/drdgvhbh/stellar-fi-anchor/authentication/mock"
+	"github.com/drdgvhbh/stellar-anchor-server/authentication/internal"
+	"github.com/drdgvhbh/stellar-anchor-server/authentication/mock"
 	"github.com/pkg/errors"
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"

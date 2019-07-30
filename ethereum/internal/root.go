@@ -3,7 +3,7 @@ package internal
 import (
 	"net/http"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/middleware"
+	"github.com/drdgvhbh/stellar-anchor-server/middleware"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )

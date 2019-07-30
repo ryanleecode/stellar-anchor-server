@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/logic"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/logic"
 
 	"github.com/jinzhu/gorm"
 )

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/logic"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/logic"
 
 	"github.com/gorilla/schema"
 	_ "github.com/gorilla/schema"

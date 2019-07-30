@@ -1,4 +1,4 @@
-module github.com/drdgvhbh/stellar-fi-anchor/static
+module github.com/drdgvhbh/stellar-anchor-server/static
 
 go 1.12
 

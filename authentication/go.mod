@@ -1,4 +1,4 @@
-module github.com/drdgvhbh/stellar-fi-anchor/authentication
+module github.com/drdgvhbh/stellar-anchor-server/authentication
 
 go 1.12
 

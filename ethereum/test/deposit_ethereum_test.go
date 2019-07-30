@@ -11,9 +11,9 @@ import (
 
 	"github.com/stellar/go/network"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/sdk"
+	"github.com/drdgvhbh/stellar-anchor-server/sdk"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal"
 
 	hdwallet "github.com/drdgvhbh/go-ethereum-hdwallet"
 	"github.com/ethereum/go-ethereum/rpc"

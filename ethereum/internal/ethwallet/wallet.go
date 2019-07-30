@@ -1,7 +1,7 @@
 package ethwallet
 
 import (
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal/data"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal/data"
 
 	"github.com/pkg/errors"
 

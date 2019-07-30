@@ -8,7 +8,7 @@ import (
 
 	"github.com/stellar/go/network"
 
-	"github.com/drdgvhbh/stellar-fi-anchor/ethereum/internal"
+	"github.com/drdgvhbh/stellar-anchor-server/ethereum/internal"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"

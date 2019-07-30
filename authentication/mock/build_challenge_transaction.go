@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"github.com/drdgvhbh/stellar-fi-anchor/authentication/internal"
+	"github.com/drdgvhbh/stellar-anchor-server/authentication/internal"
 	"github.com/stellar/go/txnbuild"
 	"github.com/stretchr/testify/mock"
 )

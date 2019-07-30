@@ -3,7 +3,7 @@ package internal
 import (
 	"crypto/rand"
 	hdwallet "github.com/drdgvhbh/go-ethereum-hdwallet"
-	"github.com/drdgvhbh/stellar-fi-anchor/authentication/internal/random"
+	"github.com/drdgvhbh/stellar-anchor-server/authentication/internal/random"
 	"github.com/stellar/go/keypair"
 	"log"
 	"net/http"
