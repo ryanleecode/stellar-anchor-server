@@ -5,5 +5,17 @@ services:
     build:
       context: .
       dockerfile: test.Dockerfile
+  blockchain-bootnode:
+    build:
+      context: poa-ethereum
+      dockerfile: bootnode.Dockerfile
+  node1:
+    build:
+      context: poa-ethereum
+      dockerfile: node1.Dockerfile
+  node2:
+    build:
+      context: poa-ethereum
+      dockerfile: node2.Dockerfile
   postgres:
     image: postgres:latest
