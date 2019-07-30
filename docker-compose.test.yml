@@ -5,6 +5,13 @@ services:
     build:
       context: .
       dockerfile: test.Dockerfile
+    environment: 
+      - DB_HOST:ethereum-server-db
+      - DB_USER:postgres
+      - DB_NAME:postgres
+      - DB_PORT:5432
+      - DB_SSL_MODE:disable
+      - ETH_RPC_ENDPOINT:node1:8501
   blockchain-bootnode:
     build:
       context: poa-ethereum
@@ -17,5 +24,5 @@ services:
     build:
       context: poa-ethereum
       dockerfile: node2.Dockerfile
-  postgres:
+  ethereum-server-db:
     image: postgres:latest

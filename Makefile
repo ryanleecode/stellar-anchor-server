@@ -8,6 +8,9 @@ test-unit:
 	cd middleware && make test-unit
 	cd static && make test-unit
 
+test-integration:
+	cd ethereum && make test-integration
+
 cover:
 	go test ./internal/... -coverprofile=coverage.out
 
@@ -17,6 +20,3 @@ test-coverage:
 coveralls:
 	go test -v -covermode=count -coverprofile=coverage.out ./internal/...
 
-test-e2e:
-	cd ./test/simple-git-repo && git checkout master && git checkout --detach
-	go test ./test
