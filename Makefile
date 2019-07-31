@@ -20,3 +20,17 @@ test-coverage:
 coveralls:
 	go test -v -covermode=count -coverprofile=coverage.out ./internal/...
 
+docker-static-test:
+	cd static && make docker-test
+
+docker-middleware-test:
+	cd middleware && make docker-test
+
+docker-ethereum-test:
+	cd ethereum && make docker-test
+
+docker-authentication-test:
+	cd authentication && make docker-test
+
+docker-api-gateway-test:
+	cd api-gateway && make docker-test
