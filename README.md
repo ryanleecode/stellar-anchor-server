@@ -2,7 +2,7 @@
 
 Stellar Anchor is a web server that implements the Stellar Ecosystem Proposals. The purpose for this project to provide a foundation for creating Stellar Applications. This web server can represent a fake financial institution for your Stellar wallet to connect to.
 
-![img](https://travis-ci.com/drdgvhbh/StellarAnchor.svg?branch=master)
+[![Build Status](https://travis-ci.com/drdgvhbh/stellar-anchor-server.svg?branch=master)](https://travis-ci.com/drdgvhbh/stellar-anchor-server)
 
 ## Features
 
