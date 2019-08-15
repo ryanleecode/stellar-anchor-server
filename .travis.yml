@@ -1,15 +1,34 @@
 language: minimal
-
 services:
-  - docker
-
+- docker
 env:
-    matrix:
-      - TARGET="docker-static-test"
-      - TARGET="docker-middleware-test"
-      - TARGET="docker-ethereum-test"
-      - TARGET="docker-authentication-test"
-      - TARGET="docker-api-gateway-test"
-
+  matrix:
+  - TARGET="docker-static-test"
+  - TARGET="docker-middleware-test"
+  - TARGET="docker-ethereum-test"
+  - TARGET="docker-authentication-test"
+  - TARGET="docker-api-gateway-test"
 script:
-  - make $TARGET
+- make $TARGET
+deploy:
+- provider: s3
+  access_key_id: AKIAVQHEZ4AETVJXI26Q
+  secret_access_key: &1
+    secure: ZifBNHtSf13aM/bo6LICtL8o6TcVxiamJavFIjoMMEyG9yFh33hTPd8b3AGUyIioLJscXWyR71ovi0/2TG22DnnaGE5nzBG3tAMDnCPTO8+zNqo2UBleS624Y3kMdncjSHbV3j1+QcuhOi57khStKzscRxKzNtz59O3tvMc7wxk3NZ9MZDQkX8CPrhBBRM9QE75Rl+eYqZuS2lMklTZ7G/aP7xhpLtb9QE74wOgul3cRggmY440a4l1AAaFAfBAKNLfvErFTqoNjoQyAJw6+D0NcjdLp6AhLZEknN4wN8kdrHLmGiOu4azt36VlnRL8ryrcfNlMXBIyQb/yGBLDZqI0AEjFRd/mgjVD81vYn4NQQ4LNOIHoPC2yr3WW48LOSQsgGsjQPwtTA0W2ZDMULBmdRsREbPrHLCL+ZMUalZIdkGJZ4TyeNzgIfsFl8TpP74M47P3J6OfQ40rl3ltTWIOZTOd4N1d3EPfxIWkJ6ImGbfz0i0XXxOWwtenGZ+4qJHxUD+9pAfDmvN7MjZ+t7s+hetuN66WDQ00JebaBO0n6jlPrEsBhxrdsd5d7G3EgGporADH20rrd5OeV0FsWYKxsuAzMSYEdyayF9KgQnNDWewoesU5tDz64YszJIoyV+TdtebQkb2h81djLByKXQUVyyFg4tbsFwwMYQBk3GtRM=
+  local_dir: dpl_cd_upload
+  skip_cleanup: true
+  on: &2
+    repo: drdgvhbh/stellar-anchor-server
+  bucket: drdgvhbhcodedeploy
+- provider: codedeploy
+  access_key_id: AKIAVQHEZ4AETVJXI26Q
+  secret_access_key: *1
+  bucket: drdgvhbhcodedeploy
+  key: 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
+  bundle_type: zip
+  application: stellar-anchor-server
+  deployment_group: stellar-anchor-server
+  on: *2
+before_deploy:
+- mkdir -p dpl_cd_upload
+- mv VyV0OpVUvASHBzU2t57ErNHSeHbEDILOEUOBBJQW dpl_cd_upload/VyV0OpVUvASHBzU2t57ErNHSeHbEDILOEUOBBJQW
